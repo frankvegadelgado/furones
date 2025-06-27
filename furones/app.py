@@ -20,7 +20,7 @@ def approximate_solution(inputFile, verbose=False, log=False, count=False, brute
         log: Enable file logging.
         count: Measure the size of the Independent Set.
         bruteForce: Enable brute force approach.
-        approximation: Enable an approximate approach within a ratio of at most 2.
+        approximation: Enable an approximate approach within a ratio of at most polynomial.
     """
     
     logger = applogger.Logger(applogger.FileLogger() if (log) else applogger.ConsoleLogger(verbose))
@@ -33,12 +33,12 @@ def approximate_solution(inputFile, verbose=False, log=False, count=False, brute
     logger.info(f"Parsing the Input File done in: {(time.time() - started) * 1000.0} milliseconds")
     
     if approximation:
-        logger.info("An approximate Solution with an approximation ratio of at most 2 started")
+        logger.info("An approximate Solution with a polynomial-approximation ratio started")
         started = time.time()
         
         approximate_result = algorithm.find_independent_set_approximation(graph)
 
-        logger.info(f"An approximate Solution with an approximation ratio of at most 2 done in: {(time.time() - started) * 1000.0} milliseconds")
+        logger.info(f"An approximate Solution with a polynomial-approximation ratio done in: {(time.time() - started) * 1000.0} milliseconds")
         
         answer = utils.string_result_format(approximate_result, count)
         output = f"{filename}: (approximation) {answer}"
@@ -84,7 +84,7 @@ def main():
     helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Independent Set')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.0.1')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.0.2')
     
     # Initialize the parameters
     args = helper.parse_args()

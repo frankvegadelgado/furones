@@ -14,7 +14,7 @@ def approximate_solutions(inputDirectory, verbose=False, log=False, count=False,
         log: Enable file logging.
         count: Measure the size of the Independent Set.
         bruteForce: Enable brute force approach.
-        approximation: Enable an approximate approach within a ratio of at most 2.
+        approximation: Enable an approximate approach within a ratio of at most polynomial.
     """
     
     file_names = utils.get_file_names(inputDirectory)
@@ -36,7 +36,7 @@ def main():
     helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Independent Set')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.0.1')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.0.2')
 
     
     # Initialize the parameters

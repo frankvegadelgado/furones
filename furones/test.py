@@ -34,7 +34,7 @@ def main():
     helper.add_argument('-w', '--write', action='store_true', help='write the generated random matrix to a file in the current directory')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.0.1')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.0.2')
     
     # Initialize the parameters
     args = helper.parse_args()
@@ -62,12 +62,12 @@ def main():
         logger.info(f"Sparsity: {1 - (sparse_matrix.nnz / (sparse_matrix.shape[0] * sparse_matrix.shape[1]))}")
         
         if approximation:
-            logger.info("An approximate Solution with an approximation ratio of at most 2 started")
+            logger.info("An approximate Solution with a polynomial-approximation ratio started")
             started = time.time()
             
             approximate_result = algorithm.find_independent_set_approximation(graph)
 
-            logger.info(f"An approximate Solution with an approximation ratio of at most 2 done in: {(time.time() - started) * 1000.0} milliseconds")
+            logger.info(f"An approximate Solution with a polynomial-approximation ratio done in: {(time.time() - started) * 1000.0} milliseconds")
             
             answer = utils.string_result_format(approximate_result, count)
             output = f"{i + 1}-approximation Test: {answer}" 
@@ -103,7 +103,7 @@ def main():
             elif approximation:
                 log = math.log(graph.number_of_nodes())
                 output = f"Upper Bound for Ratio (Furones/Optimal): {(graph.number_of_nodes()/(log*log)) * len(novel_result)/len(approximate_result)}"
-        utils.println(output, logger, args.log)
+            utils.println(output, logger, args.log)
         
 
         if args.write:
