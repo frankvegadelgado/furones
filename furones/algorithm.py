@@ -7,7 +7,7 @@ import networkx as nx
 
 def find_independent_set(graph):
     """
-    Compute an approximate independent set for an undirected graph by transforming it into a chordal graph.
+    Compute an approximate independent set for an undirected graph.
 
     Args:
         graph (nx.Graph): A NetworkX Graph object representing the input graph.
