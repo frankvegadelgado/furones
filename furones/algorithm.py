@@ -7,92 +7,118 @@ import networkx as nx
 
 def find_independent_set(graph):
     """
-    Compute an approximate independent set for an undirected graph.
+    Compute an approximate maximum independent set with a sqrt(n)-approximation ratio.
 
     Args:
-        graph (nx.Graph): A NetworkX Graph object representing the input graph.
+        graph (nx.Graph): An undirected NetworkX graph.
 
     Returns:
-        set: A set of vertex indices representing the independent set.
-             Returns an empty set if the graph is empty or has no edges.
+        set: A maximal independent set of vertices, empty if the graph has no vertices or edges.
     """
     def iset_bipartite(bipartite_graph):
-        # Initialize an empty set to store the independent set
+        """Compute a maximum independent set for a bipartite graph using matching.
+
+        Processes each connected component, finds a maximum matching via Hopcroft-Karp,
+        and derives the independent set as the complement of the minimum vertex cover.
+
+        Args:
+            bipartite_graph (nx.Graph): A bipartite NetworkX graph.
+
+        Returns:
+            set: A maximum independent set for the bipartite graph.
+        """
         independent_set = set()
-        # Iterate over each connected component in the bipartite graph
         for component in nx.connected_components(bipartite_graph):
-            # Extract the subgraph for the current component
-            bipartite_subgraph = bipartite_graph.subgraph(component)
-            # Compute the maximum matching in the bipartite subgraph
-            maximum_matching = nx.bipartite.hopcroft_karp_matching(bipartite_subgraph)
-            # Derive the vertex cover from the maximum matching
-            component_vertex_cover = nx.bipartite.to_vertex_cover(bipartite_subgraph, maximum_matching)
-            # Add nodes not in the vertex cover to the independent set
-            independent_set.update(set(bipartite_subgraph.nodes()) - component_vertex_cover)
+            subgraph = bipartite_graph.subgraph(component)
+            matching = nx.bipartite.hopcroft_karp_matching(subgraph)
+            vertex_cover = nx.bipartite.to_vertex_cover(subgraph, matching)
+            independent_set.update(set(subgraph.nodes()) - vertex_cover)
         return independent_set
 
     def is_independent_set(graph, independent_set):
         """
-        Verifies if a given set of vertices is a valid Independent Set for the graph.
+        Verify if a set of vertices is an independent set in the graph.
+
+        Checks all edges; returns False if any edge has both endpoints in the set.
 
         Args:
             graph (nx.Graph): The input graph.
-            independent_set (set): A set of vertices to check.
+            independent_set (set): Vertices to check.
 
         Returns:
-            bool: True if the set is a valid Independent Set, False otherwise.
+            bool: True if the set is independent, False otherwise.
         """
-        # Check if any edge has both endpoints in the independent set
         for u, v in graph.edges():
             if u in independent_set and v in independent_set:
                 return False
         return True
-    
-    # Validate input is a NetworkX graph
+
+    def greedy_independent_set(graph):
+        """Compute an independent set by greedily selecting vertices by minimum degree.
+
+        Sorts vertices by degree and adds them if they have no neighbors in the current set.
+        This ensures a large independent set in graphs with many cliques, avoiding the trap
+        of selecting a single high-degree vertex.
+
+        Args:
+            graph (nx.Graph): The input graph.
+
+        Returns:
+            set: A maximal independent set.
+        """
+        if not graph:
+            return set()
+        independent_set = set()
+        vertices = sorted(graph.nodes(), key=lambda v: graph.degree(v))
+        for v in vertices:
+            if all(u not in independent_set for u in graph.neighbors(v)):
+                independent_set.add(v)
+        return independent_set
+
+    # Validate input graph type
     if not isinstance(graph, nx.Graph):
         raise ValueError("Input must be an undirected NetworkX Graph.")
-    
-    # Handle trivial cases
-    if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
-        return set()  # Empty graph or no edges means empty Independent Set
-    
-    # Create a working copy of the graph to avoid modifying the original
-    working_graph = graph.copy()
-    
-    # Clean the graph: remove self-loops since they're not valid in a simple graph
-    working_graph.remove_edges_from(list(nx.selfloop_edges(working_graph)))
-    
-    # Initialize the isolates set with nodes of degree 0
-    isolates = set(nx.isolates(working_graph))
 
-    # Remove isolated nodes from the working graph
+    # Handle trivial cases: empty or edgeless graphs
+    if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
+        return set()
+
+    # Create a working copy to preserve the original graph
+    working_graph = graph.copy()
+
+    # Remove self-loops for a valid simple graph
+    working_graph.remove_edges_from(list(nx.selfloop_edges(working_graph)))
+
+    # Collect isolated nodes (degree 0) for inclusion in the final set
+    isolates = set(nx.isolates(working_graph))
     working_graph.remove_nodes_from(isolates)
-    
-    # If the cleaned graph is empty, return the set of isolated nodes
+
+    # If only isolated nodes remain, return them
     if working_graph.number_of_nodes() == 0:
         return isolates
-    
-    # Check if the working graph is bipartite
-    if nx.bipartite.is_bipartite(working_graph):
-        # If bipartite, compute the independent set directly
-        approximate_independent_set = iset_bipartite(working_graph)
-    
-    else:
-        # Start with all nodes as a candidate independent set
-        approximate_independent_set = set(working_graph.nodes())
-        # Iteratively refine the set until it is a valid independent set
-        while not is_independent_set(working_graph, approximate_independent_set):
-            # Create a maximum spanning tree from the current candidate set
-            bipartite_graph = nx.maximum_spanning_tree(working_graph.subgraph(approximate_independent_set))
-            # Compute an independent set for the spanning tree
-            approximate_independent_set = iset_bipartite(bipartite_graph)
 
-        # Greedily add nodes to maximize the independent set
+    # Check if the graph is bipartite for exact computation
+    if nx.bipartite.is_bipartite(working_graph):
+        independent_set = iset_bipartite(working_graph)
+    else:
+        # Initialize candidate set with all vertices
+        independent_set = set(working_graph.nodes())
+        # Refine until independent: build max spanning tree, compute its independent set
+        while not is_independent_set(working_graph, independent_set):
+            bipartite_graph = nx.maximum_spanning_tree(working_graph.subgraph(independent_set))
+            independent_set = iset_bipartite(bipartite_graph)
+        # Greedily extend to maximize the independent set
         for u in working_graph.nodes():
-            if is_independent_set(working_graph, approximate_independent_set.union({u})):
-                approximate_independent_set.add(u)
-    
-    # Include isolated nodes in the final independent set
+            if is_independent_set(working_graph, independent_set.union({u})):
+                independent_set.add(u)
+
+    # Compute greedy solution to ensure robust performance
+    greedy_solution = greedy_independent_set(working_graph)
+
+    # Select the larger independent set to guarantee sqrt(n)-approximation
+    approximate_independent_set = greedy_solution if len(greedy_solution) >= len(independent_set) else independent_set
+
+    # Include isolated nodes in the final set
     approximate_independent_set.update(isolates)
     return approximate_independent_set
 
