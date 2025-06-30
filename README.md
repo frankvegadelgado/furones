@@ -92,7 +92,7 @@ Independent Set Found `4, 5`: Nodes `4`, and `5` constitute an optimal solution.
 
 ## Prerequisites
 
-- Python ≥ 3.10
+- Python ≥ 3.12
 
 ## Installation
 
