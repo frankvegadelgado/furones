@@ -13,7 +13,7 @@ def find_independent_set(graph):
         graph (nx.Graph): An undirected NetworkX graph.
 
     Returns:
-        set: A maximal independent set of vertices, empty if the graph has no vertices or edges.
+        set: A maximal independent set of vertices.
     """
     def iset_bipartite(bipartite_graph):
         """Compute a maximum independent set for a bipartite graph using matching.
