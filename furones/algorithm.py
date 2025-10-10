@@ -1,4 +1,4 @@
-# Created on 21/05/2025
+# Created on 10/10/2025
 # Author: Frank Vega
 
 import itertools
@@ -53,7 +53,7 @@ def find_independent_set(graph):
                 return False
         return True
 
-    def greedy_independent_set(graph):
+    def greedy_min_degree_independent_set(graph):
         """Compute an independent set by greedily selecting vertices by minimum degree.
 
         Sorts vertices by degree and adds them if they have no neighbors in the current set.
@@ -103,7 +103,7 @@ def find_independent_set(graph):
 
     # Handle trivial cases: empty or edgeless graphs
     if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
-        return set()
+        return set(graph)
 
     # Create a working copy to preserve the original graph
     working_graph = graph.copy()
@@ -124,19 +124,15 @@ def find_independent_set(graph):
         tree_based_set = iset_bipartite(working_graph)
     else:
         # Initialize candidate set with all vertices
-        independent_set = set(working_graph.nodes())
+        iterative_solution = set(working_graph.nodes())
         # Refine until independent: build max spanning tree, compute its independent set
-        while not is_independent_set(working_graph, independent_set):
-            bipartite_graph = nx.maximum_spanning_tree(working_graph.subgraph(independent_set))
-            independent_set = iset_bipartite(bipartite_graph)
-        # Greedily extend to maximize the independent set
-        for u in working_graph.nodes():
-            if is_independent_set(working_graph, independent_set.union({u})):
-                independent_set.add(u)
-        tree_based_set = independent_set
+        while not is_independent_set(working_graph, iterative_solution):
+            bipartite_graph = nx.maximum_spanning_tree(working_graph.subgraph(iterative_solution))
+            iterative_solution = iset_bipartite(bipartite_graph)
+        tree_based_set  = iterative_solution
 
     # Compute greedy solutions (min and max degree) to ensure robust performance
-    min_greedy_solution = greedy_independent_set(working_graph)
+    min_greedy_solution = greedy_min_degree_independent_set(working_graph)
     max_greedy_solution = greedy_max_degree_independent_set(working_graph)
 
     # Select the larger independent set among tree-based, min-greedy, and max-greedy to guarantee sqrt(n)-approximation

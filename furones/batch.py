@@ -1,4 +1,4 @@
-# Created on 21/05/2025
+# Created on 10/10/2025
 # Author: Frank Vega
 
 import argparse
@@ -36,7 +36,7 @@ def main():
     helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Independent Set')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.0.6')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.0.7')
 
     
     # Initialize the parameters

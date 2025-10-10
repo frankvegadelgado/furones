@@ -1,6 +1,6 @@
-#                   Approximate Independent Set Solver
+#                Approximate Independent Set Solver
 #                          Frank Vega
-#                       May 21th, 2025
+#                      October 10th, 2025
 
 import argparse
 import time
@@ -68,10 +68,9 @@ def approximate_solution(inputFile, verbose=False, log=False, count=False, brute
     utils.println(output, logger, log)
     if novel_result and (bruteForce or approximation):
         if bruteForce:    
-            output = f"Exact Ratio (Furones/Optimal): {len(brute_force_result)/len(novel_result)}"
+            output = f"Exact Ratio (Optimal/Furones): {len(brute_force_result)/len(novel_result)}"
         elif approximation:
-            log = math.log(graph.number_of_nodes())
-            output = f"Upper Bound for Ratio (Furones/Optimal): {(graph.number_of_nodes()/(log*log)) * len(novel_result)/len(approximate_result)}"
+            output = f"Approximate Ratio (Approximation/Furones): {len(approximate_result)/len(novel_result)}"
         utils.println(output, logger, log)
           
 def main():
@@ -84,7 +83,7 @@ def main():
     helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Independent Set')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.0.6')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.0.7')
     
     # Initialize the parameters
     args = helper.parse_args()
