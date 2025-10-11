@@ -103,7 +103,7 @@ def find_independent_set(graph):
 
     # Handle trivial cases: empty or edgeless graphs
     if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
-        return set(graph)
+        return set(graph.nodes())
 
     # Create a working copy to preserve the original graph
     working_graph = graph.copy()
@@ -135,8 +135,17 @@ def find_independent_set(graph):
     min_greedy_solution = greedy_min_degree_independent_set(working_graph)
     max_greedy_solution = greedy_max_degree_independent_set(working_graph)
 
-    # Select the larger independent set among tree-based, min-greedy, and max-greedy to guarantee sqrt(n)-approximation
-    candidates = [tree_based_set, min_greedy_solution, max_greedy_solution]
+    # Additional candidate: independent set in low-degree induced subgraph
+    low_set = set()
+    if working_graph.number_of_nodes() > 0:
+        max_deg = max(working_graph.degree(v) for v in working_graph)
+        low_deg_nodes = [v for v in working_graph if working_graph.degree(v) < max_deg]
+        if low_deg_nodes:
+            low_sub = working_graph.subgraph(low_deg_nodes)
+            low_set = find_independent_set(low_sub)
+
+    # Select the larger independent set among tree-based, min-greedy, max-greedy, and low-set to guarantee sqrt(n)-approximation
+    candidates = [tree_based_set, min_greedy_solution, max_greedy_solution, low_set]
     approximate_independent_set = max(candidates, key=len)
 
     # Include isolated nodes in the final set
