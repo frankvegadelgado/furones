@@ -4,10 +4,15 @@
 import itertools
 
 import networkx as nx
+import math
 
 def find_independent_set(graph):
     """
     Compute an approximate maximum independent set with a sqrt(n)-approximation ratio.
+
+    This algorithm combines iterative refinement using maximum spanning trees with greedy
+    minimum-degree, maximum-degree, and log-degree approaches, ensuring a robust solution across diverse
+    graph structures. It returns the largest of the four independent sets produced.
 
     Args:
         graph (nx.Graph): An undirected NetworkX graph.
@@ -17,9 +22,6 @@ def find_independent_set(graph):
     """
     def iset_bipartite(bipartite_graph):
         """Compute a maximum independent set for a bipartite graph using matching.
-
-        Processes each connected component, finds a maximum matching via Hopcroft-Karp,
-        and derives the independent set as the complement of the minimum vertex cover.
 
         Args:
             bipartite_graph (nx.Graph): A bipartite NetworkX graph.
@@ -39,8 +41,6 @@ def find_independent_set(graph):
         """
         Verify if a set of vertices is an independent set in the graph.
 
-        Checks all edges; returns False if any edge has both endpoints in the set.
-
         Args:
             graph (nx.Graph): The input graph.
             independent_set (set): Vertices to check.
@@ -55,10 +55,6 @@ def find_independent_set(graph):
 
     def greedy_min_degree_independent_set(graph):
         """Compute an independent set by greedily selecting vertices by minimum degree.
-
-        Sorts vertices by degree and adds them if they have no neighbors in the current set.
-        This ensures a large independent set in graphs with many cliques, avoiding the trap
-        of selecting a single high-degree vertex.
 
         Args:
             graph (nx.Graph): The input graph.
@@ -78,10 +74,6 @@ def find_independent_set(graph):
     def greedy_max_degree_independent_set(graph):
         """Compute an independent set by greedily selecting vertices by maximum degree.
 
-        Sorts vertices by degree in descending order and adds them if they have no neighbors
-        in the current set. This helps in graphs where high-degree vertices form a large
-        independent set connected to low-degree cliques.
-
         Args:
             graph (nx.Graph): The input graph.
 
@@ -97,13 +89,31 @@ def find_independent_set(graph):
                 independent_set.add(v)
         return independent_set
 
+    def greedy_log_degree_independent_set(graph):
+        """Compute an independent set by greedily selecting vertices by decreasing log-degree.
+
+        Args:
+            graph (nx.Graph): The input graph.
+
+        Returns:
+            set: A maximal independent set.
+        """
+        if not graph:
+            return set()
+        independent_set = set()
+        vertices = sorted(graph.nodes(), key=lambda v: math.log(graph.degree(v) + 1), reverse=True)
+        for v in vertices:
+            if all(u not in independent_set for u in graph.neighbors(v)):
+                independent_set.add(v)
+        return independent_set
+
     # Validate input graph type
     if not isinstance(graph, nx.Graph):
         raise ValueError("Input must be an undirected NetworkX Graph.")
 
     # Handle trivial cases: empty or edgeless graphs
     if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
-        return set(graph.nodes())
+        return set(graph)
 
     # Create a working copy to preserve the original graph
     working_graph = graph.copy()
@@ -121,7 +131,7 @@ def find_independent_set(graph):
 
     # Check if the graph is bipartite for exact computation
     if nx.bipartite.is_bipartite(working_graph):
-        tree_based_set = iset_bipartite(working_graph)
+        tree_based_set  = iset_bipartite(working_graph)
     else:
         # Initialize candidate set with all vertices
         iterative_solution = set(working_graph.nodes())
@@ -131,21 +141,13 @@ def find_independent_set(graph):
             iterative_solution = iset_bipartite(bipartite_graph)
         tree_based_set  = iterative_solution
 
-    # Compute greedy solutions (min and max degree) to ensure robust performance
+    # Compute greedy solutions (min, max, and log degree) to ensure robust performance
     min_greedy_solution = greedy_min_degree_independent_set(working_graph)
     max_greedy_solution = greedy_max_degree_independent_set(working_graph)
+    log_greedy_solution = greedy_log_degree_independent_set(working_graph)
 
-    # Additional candidate: independent set in low-degree induced subgraph
-    low_set = set()
-    if working_graph.number_of_nodes() > 0:
-        max_deg = max(working_graph.degree(v) for v in working_graph)
-        low_deg_nodes = [v for v in working_graph if working_graph.degree(v) < max_deg]
-        if low_deg_nodes:
-            low_sub = working_graph.subgraph(low_deg_nodes)
-            low_set = find_independent_set(low_sub)
-
-    # Select the larger independent set among tree-based, min-greedy, max-greedy, and low-set to guarantee sqrt(n)-approximation
-    candidates = [tree_based_set, min_greedy_solution, max_greedy_solution, low_set]
+    # Select the larger independent set among tree-based, min-greedy, max-greedy, and log-greedy to guarantee sqrt(n)-approximation
+    candidates = [tree_based_set, min_greedy_solution, max_greedy_solution, log_greedy_solution]
     approximate_independent_set = max(candidates, key=len)
 
     # Include isolated nodes in the final set
