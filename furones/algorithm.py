@@ -1,4 +1,4 @@
-# Created on 10/10/2025
+# Created on 10/12/2025
 # Author: Frank Vega
 
 import itertools
@@ -121,6 +121,12 @@ def find_independent_set(graph):
         while not is_independent_set(working_graph, iterative_solution):
             bipartite_graph = nx.maximum_spanning_tree(working_graph.subgraph(iterative_solution))
             iterative_solution = iset_bipartite(bipartite_graph)
+        # Greedily extend to maximize the independent set
+        for v in working_graph.nodes():
+            if v not in iterative_solution:
+                # Check if v is independent of the current set iterative_solution
+                if not any(working_graph.has_edge(v, u) for u in iterative_solution):
+                    iterative_solution.add(v)
         tree_based_set = iterative_solution
 
     # Compute greedy solutions (min and max degree) to ensure robust performance
