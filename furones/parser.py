@@ -21,12 +21,18 @@ def create_sparse_matrix_from_file(file):
     graph = nx.Graph()
     for i, line in enumerate(file):
         line = line.strip()  # Remove newline characters
-        if not line.startswith('c') and not line.startswith('p'):
-            edge = [np.int32(node) for node in line.split(' ') if node != 'e']
-            if len(edge) != 2 or min(edge[0], edge[1]) <= 0:
+        parts = line.split(' ')
+        if not line.startswith('c') and len(parts) == 3:
+            # Check if this looks like an edge line (has numbers at the end)
+            try:
+                int(parts[-1])
+                int(parts[-2])
+                pass  # Process as edge
+            except (ValueError, IndexError):
+                continue  # Skip metadata lines
+            edge = [np.int32(parts[-1]), np.int32(parts[-2])]
+            if min(edge[0], edge[1]) <= 0:
                 raise ValueError(f"The input file is not in the correct DIMACS format at line {i}")
-            elif graph.has_edge(edge[0] - 1, edge[1] - 1):
-                raise ValueError(f"The input file contains a repeated edge at line {i}")
             else:
                 graph.add_edge(edge[0] - 1, edge[1] - 1)
     

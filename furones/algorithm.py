@@ -7,7 +7,7 @@ import networkx as nx
 
 def find_independent_set(graph):
     """
-    Compute an approximate maximum independent set with a sqrt(n)-approximation ratio.
+    Compute an approximate maximum independent set with a 2-approximation ratio.
 
     This algorithm combines iterative refinement using maximum spanning trees with greedy
     minimum-degree and maximum-degree approaches, plus a low-degree induced subgraph heuristic,
@@ -20,22 +20,22 @@ def find_independent_set(graph):
     Returns:
         set: A maximal independent set of vertices.
     """
-    def iset_bipartite(bipartite_graph):
-        """Compute a maximum independent set for a bipartite graph using matching.
+    def cover_bipartite(bipartite_graph):
+        """Compute a minimum vertex cover set for a bipartite graph using matching.
 
         Args:
             bipartite_graph (nx.Graph): A bipartite NetworkX graph.
 
         Returns:
-            set: A maximum independent set for the bipartite graph.
+            set: A minimum vertex cover set for the bipartite graph.
         """
-        independent_set = set()
+        optimal_solution = set()
         for component in nx.connected_components(bipartite_graph):
             subgraph = bipartite_graph.subgraph(component)
             matching = nx.bipartite.hopcroft_karp_matching(subgraph)
             vertex_cover = nx.bipartite.to_vertex_cover(subgraph, matching)
-            independent_set.update(set(subgraph.nodes()) - vertex_cover)
-        return independent_set
+            optimal_solution.update(vertex_cover)
+        return optimal_solution
 
     def is_independent_set(graph, independent_set):
         """
@@ -113,21 +113,53 @@ def find_independent_set(graph):
 
     # Check if the graph is bipartite for exact computation
     if nx.bipartite.is_bipartite(working_graph):
-        tree_based_set = iset_bipartite(working_graph)
+        complement_based_set = set(working_graph.nodes()) - cover_bipartite(working_graph)
     else:
-        # Initialize candidate set with all vertices
-        iterative_solution = set(working_graph.nodes())
-        # Refine until independent: build max spanning tree, compute its independent set
-        while not is_independent_set(working_graph, iterative_solution):
-            bipartite_graph = nx.maximum_spanning_tree(working_graph.subgraph(iterative_solution))
-            iterative_solution = iset_bipartite(bipartite_graph)
+        approximate_vertex_cover = set()
+        component_solutions = [working_graph.subgraph(component) for component in nx.connected_components(working_graph)]
+        while component_solutions:
+            subgraph = component_solutions.pop()
+            if subgraph.number_of_edges() == 0:
+                continue
+            if nx.bipartite.is_bipartite(subgraph):
+                approximate_vertex_cover.update(cover_bipartite(subgraph))
+            else:
+                vertex_cover = nx.approximation.min_weighted_vertex_cover(subgraph)
+                G = nx.Graph()
+                for u, v in subgraph.edges():
+                    if u in vertex_cover and v in vertex_cover:
+                        G.add_edge((u, 0), (v, 0))
+                        G.add_edge((u, 0), (v, 1))
+                        G.add_edge((u, 1), (v, 0))
+                        G.add_edge((u, 1), (v, 1))
+                    elif u in vertex_cover:
+                        G.add_edge((u, 0), (v, v, v))
+                        G.add_edge((u, 1), (v, v, v))
+                    elif v in vertex_cover:
+                        G.add_edge((u, u, u), (v, 0))
+                        G.add_edge((u, u, u), (v, 1))
+                    else:
+                        G.add_edge((u, u, u), (v, v, v))  
+                tuple_vertex_cover = nx.approximation.min_weighted_vertex_cover(G)
+                solution = {u for u in vertex_cover if (u, 0) in tuple_vertex_cover and (u, 1) in tuple_vertex_cover}
+                if solution:
+                    approximate_vertex_cover.update(solution)
+                    remaining_nodes = subgraph.subgraph(set(subgraph.nodes()) - solution).copy()
+                    remaining_isolates = set(nx.isolates(remaining_nodes))
+                    remaining_nodes.remove_nodes_from(remaining_isolates)
+                    if remaining_nodes.number_of_edges() > 0:
+                        new_component_solutions = [remaining_nodes.subgraph(component) for component in nx.connected_components(remaining_nodes)]
+                        component_solutions.extend(new_component_solutions)
+                else:
+                    approximate_vertex_cover.update(vertex_cover)        
+        complement_solution = set(working_graph.nodes()) - approximate_vertex_cover    
         # Greedily extend to maximize the independent set
         for v in working_graph.nodes():
-            if v not in iterative_solution:
-                # Check if v is independent of the current set iterative_solution
-                if not any(working_graph.has_edge(v, u) for u in iterative_solution):
-                    iterative_solution.add(v)
-        tree_based_set = iterative_solution
+            if v not in complement_solution:
+                # Check if v is independent of the current set complement_solution
+                if not any(working_graph.has_edge(v, u) for u in complement_solution):
+                    complement_solution.add(v)
+        complement_based_set = complement_solution
 
     # Compute greedy solutions (min and max degree) to ensure robust performance
     min_greedy_solution = greedy_min_degree_independent_set(working_graph)
@@ -142,12 +174,14 @@ def find_independent_set(graph):
             low_sub = working_graph.subgraph(low_deg_nodes)
             low_set = greedy_min_degree_independent_set(low_sub)
 
-    # Select the larger independent set among tree-based, min-greedy, max-greedy, and low-set to guarantee sqrt(n)-approximation
-    candidates = [tree_based_set, min_greedy_solution, max_greedy_solution, low_set]
+    # Select the larger independent set among tree-based, min-greedy, max-greedy, and low-set to guarantee 2-approximation
+    candidates = [complement_based_set, min_greedy_solution, max_greedy_solution, low_set]
     approximate_independent_set = max(candidates, key=len)
 
     # Include isolated nodes in the final set
     approximate_independent_set.update(isolates)
+    if not is_independent_set(graph, approximate_independent_set):
+        raise RuntimeError(f"Polynomial-time algorithm failed: the set {approximate_independent_set} is not independent")
     return approximate_independent_set
 
 

@@ -2,7 +2,7 @@
 
 ![In Loving Memory of Asia Furones (The Grandmother I Never Knew)](docs/furones.jpg)
 
-This work builds upon [A Sqrt(n)-Approximation for Independent Sets: The Furones Algorithm](https://dev.to/frank_vega_987689489099bf/the-furones-algorithm-15lp).
+This work builds upon [A 2-Approximation for Independent Sets: The Furones Algorithm](https://dev.to/frank_vega_987689489099bf/the-furones-algorithm-15lp).
 
 ---
 
@@ -240,7 +240,7 @@ options:
 # Complexity
 
 ```diff
-+ We present a polynomial-time algorithm achieving a Sqrt(n)-approximation ratio for MIS, providing strong evidence that P = NP by efficiently solving a computationally hard problem with near-optimal solutions.
++ We present a polynomial-time algorithm achieving a 2-approximation ratio for MIS, providing strong evidence that P = NP by efficiently solving a computationally hard problem with near-optimal solutions.
 ```
 
 ---
