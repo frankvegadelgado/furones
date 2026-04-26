@@ -214,7 +214,7 @@ def dominating_via_reduction_max_degree_4(graph):
         weights = {}
 
         # Reduction step: Replace each vertex with auxiliary vertices
-        # This transforms the problem into a maximum degree 1 case
+        # This transforms the problem into a maximum degree 4 case
         for u in list(graph.nodes()):  # Use list to avoid modification during iteration
             neighbors = list(G.neighbors(u))  # Get neighbors before removing node
             G.remove_node(u)  # Remove original vertex
@@ -231,7 +231,7 @@ def dominating_via_reduction_max_degree_4(graph):
                 # Weight 1/k balances Cauchy-Schwarz
                 weights[aux_vertex] = 1 / k  # k >= 1 post-isolate removal
 
-        # Verify the reduction was successful (max degree should be 1)
+        # Verify the reduction was successful (max degree should be 4)
         max_degree = max(dict(G.degree()).values()) if G.number_of_nodes() > 0 else 0
         if max_degree > 4:
             raise RuntimeError(f"Polynomial-time reduction failed: max degree is {max_degree}, expected ≤ 4")
