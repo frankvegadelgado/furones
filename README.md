@@ -106,7 +106,7 @@ where the fields W and V specify the endpoints of the edge while the lower-case 
 
 _Example Solution:_
 
-Dominating Set Found `4, 5`: Nodes `4` and `5` constitute an optimal solution.
+Dominating Set Found `2, 3`: Nodes `2` and `3` constitute an optimal solution.
 
 ---
 
@@ -142,10 +142,10 @@ pip install furones
    **Example Output:**
 
    ```
-   testMatrix1: Dominating Set Found 4, 5
+   testMatrix1: Dominating Set Found 2, 3
    ```
 
-   This indicates nodes `4, 5` form a Dominating Set.
+   This indicates nodes `2, 3` form a Dominating Set.
 
 ---
 
