@@ -228,7 +228,7 @@ def dominating_via_reduction_max_degree_4(graph):
                 if previous is not None:
                     G.add_edge(previous, v)
                 previous = aux_vertex    
-                # Weight 1/k balances Cauchy-Schwarz bounds for <2 approximation
+                # Weight 1/k balances Cauchy-Schwarz
                 weights[aux_vertex] = 1 / k  # k >= 1 post-isolate removal
 
         # Verify the reduction was successful (max degree should be 1)
