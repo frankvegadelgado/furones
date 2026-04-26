@@ -262,7 +262,7 @@ options:
 # Complexity
 
 ```diff
-+ We present a linear-time algorithm for MDS, providing strong evidence that P = NP by efficiently solving a computationally hard problem with near-optimal solutions.
++ We present a polynomial-time algorithm for MDS, providing strong evidence that P = NP by efficiently solving a computationally hard problem with near-optimal solutions.
 ```
 
 ---
