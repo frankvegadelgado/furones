@@ -193,15 +193,33 @@ class Graph:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def bfs_layers(G: Graph, root: int) -> Dict[int, int]:
-    """BFS distance from *root* for every vertex reachable from it."""
-    dist = {root: 0}
-    q = deque([root])
-    while q:
-        v = q.popleft()
-        for u in G.adj[v]:
-            if u not in dist:
-                dist[u] = dist[v] + 1
-                q.append(u)
+    """BFS distance from *root* for every vertex in G.
+
+    For disconnected graphs every connected component is seeded
+    independently: vertices unreachable from *root* receive distances
+    measured from the smallest vertex in their own component.  This
+    guarantees that ``layers[v]`` is defined for *every* v in G.vertices,
+    preventing the KeyError that arose in baker_ptas when the DS-reduction
+    produced a disconnected residual graph.
+    """
+    dist: Dict[int, int] = {}
+
+    # Seed the BFS with the requested root first so its component
+    # gets the "natural" distances; remaining components are handled
+    # in vertex order so the result is deterministic.
+    seeds = [root] + sorted(G.vertices - {root})
+    for seed in seeds:
+        if seed in dist:
+            continue          # already reached by an earlier BFS wave
+        dist[seed] = 0
+        q = deque([seed])
+        while q:
+            v = q.popleft()
+            for u in G.adj[v]:
+                if u not in dist:
+                    dist[u] = dist[v] + 1
+                    q.append(u)
+
     return dist
 
 
@@ -843,7 +861,10 @@ def _make_minimal(
     return ds
 
 
-
+def _greedy_repair(
+    G:       Graph,
+    partial: Set[int],
+) -> Set[int]:
     """Augment *partial* until it dominates every vertex."""
     sol = set(partial)
     dominated: Set[int] = set()
