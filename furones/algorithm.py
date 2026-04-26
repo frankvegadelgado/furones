@@ -137,17 +137,17 @@ def find_dominating_set(graph, eps=1):
         # Extend the reduced solution to a valid dominating set of the original graph
         D = lift(md_reduced)
 
-        # --- Postprocessing ---
-        # Remove redundant vertices while preserving domination
-        # (greedy pruning step)
-        approximate_dominating_set = prune_redundant_vertices_dominating(
-            working_graph, D
-        )
-
     else:
         # Degenerate case: reduction collapses completely
         # Use the forced vertices directly
-        approximate_dominating_set = forced_ds
+        D = forced_ds
+
+    # --- Postprocessing ---
+    # Remove redundant vertices while preserving domination
+    # (greedy pruning step)
+    approximate_dominating_set = prune_redundant_vertices_dominating(
+        working_graph, D
+    )
 
     # --- Reintegration of isolated vertices ---
     # All isolated vertices must be included to ensure domination
