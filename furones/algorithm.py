@@ -39,7 +39,6 @@ def prune_redundant_vertices_dominating(G: nx.Graph, D: Set) -> Set:
 
     return D
 
-
 def find_dominating_set(graph, eps=0.5):
     """
     Compute an approximate minimum dominating set (MDS) of an undirected graph.
@@ -53,30 +52,29 @@ def find_dominating_set(graph, eps=0.5):
         • For general graphs, the algorithm returns a valid dominating set.
         • If the reduced instance is planar, the solution achieves a
           (1 + ε)-approximation with respect to the reduced graph.
-        • The overall approximation factor is bounded by a small constant
-          (typically ≤ 2 in practice) due to the reduction and lifting steps.
-        • The running time is linear in the size of the graph for fixed ε,
-          i.e., O(n + m) · f(1/ε), where f depends on the PTAS.
+        • The overall approximation factor depends on the reduction and lifting
+          steps and is typically small in practice.
+        • The running time is O(n + m) · f(1/ε) for fixed ε.
 
     Args:
         graph (nx.Graph):
             An undirected NetworkX graph.
         eps (float):
-            Approximation parameter ε ∈ (0, 1]. Smaller ε yields solutions
-            closer to optimal at the expense of higher running time.
+            Approximation parameter ε ∈ (0, 1].
 
     Returns:
         set:
-            A dominating set whose size is provably close to minimum under
-            the assumptions above. Returns an empty set for trivial inputs.
+            A dominating set of the input graph.
 
     Raises:
         ValueError:
             If the input is invalid or ε ∉ (0, 1].
         RuntimeError:
-            If a required planarity condition is violated.
+            If a required structural assumption is violated.
     """
-    # Validate approximation parameter
+
+    # --- Parameter validation ---
+    # Ensure ε is within the admissible PTAS range
     if eps <= 0 or eps > 1:
         raise ValueError("epsilon must be in this interval (0, 1].")
 
@@ -84,60 +82,84 @@ def find_dominating_set(graph, eps=0.5):
     if not isinstance(graph, nx.Graph):
         raise ValueError("Input must be an undirected NetworkX Graph.")
 
-    # Trivial cases: empty graph or no edges ⇒ no dominating structure needed
+    # --- Trivial cases ---
+    # If the graph has no vertices or no edges, domination is trivial
     if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
         return set()
 
-    # Preprocessing: remove self-loops and isolated vertices
-    # (they do not affect domination in this context)
+    # --- Preprocessing ---
+    # Work on a cleaned copy of the graph:
+    #   • remove self-loops (irrelevant for domination)
+    #   • remove isolated vertices (handled separately)
     working_graph = graph.copy()
     working_graph.remove_edges_from(list(nx.selfloop_edges(working_graph)))
+
+    # Isolated vertices must belong to every dominating set
     isolates = set(nx.isolates(working_graph))
     working_graph.remove_nodes_from(isolates)
 
-    # If all vertices were removed during preprocessing
+    # If all vertices were isolated, they form the unique dominating set
     if working_graph.number_of_nodes() == 0:
         return isolates
 
-    # Reduce the graph to a planar TSCC instance suitable for PTAS
-    # forced_ds: vertices that must be included in any dominating set
-    # lift: function mapping solutions of the reduced graph back to the original graph
-    G_reduced, forced_ds, lift = tscc_ds_reduction.reduce_to_tscc_for_ds(working_graph)
+    # --- Reduction phase ---
+    # Reduce to a planar TSCC instance:
+    #   • G_reduced: reduced planar core
+    #   • forced_ds: vertices forced into any dominating set
+    #   • lift: maps solutions of G_reduced back to the original graph
+    G_reduced, forced_ds, lift = tscc_ds_reduction.reduce_to_tscc_for_ds(
+        working_graph
+    )
 
-    # Sanity check: Baker's PTAS requires planarity
+    # Baker's PTAS requires planarity of the reduced instance
     if not nx.is_planar(G_reduced):
         raise RuntimeError("2-connected edge graph is not planar.")
 
+    # --- PTAS phase (on reduced graph) ---
     if G_reduced:
         # Relabel vertices to consecutive integers [0, ..., n-1]
-        # required by the PTAS implementation
+        # (required by the PTAS implementation)
         mapping = {u: k for k, u in enumerate(G_reduced.nodes())}
         unmapping = {k: u for u, k in mapping.items()}
 
-        # Build the internal graph representation for Baker's algorithm
+        # Build the internal graph representation expected by Baker's algorithm
         G = baker_algo.Graph(G_reduced.number_of_nodes())
         for u, v in G_reduced.edges():
             G.add_edge(mapping[u], mapping[v])
 
-        # Apply Baker's PTAS for planar dominating set
+        # Compute a (1 + ε)-approximate dominating set on the reduced graph
         ptas_sol = baker_algo.baker_ptas(G, eps, verbose=False)
 
-        # Map solution back to original vertex labels of the reduced graph
+        # Translate the solution back to original vertex labels of G_reduced
         md_reduced = {unmapping[u] for u in ptas_sol}
 
-        # Lift solution to a valid dominating set of the original graph
+        # --- Lifting phase ---
+        # Extend the reduced solution to a valid dominating set of the original graph
         D = lift(md_reduced)
 
-        # Postprocessing: remove redundant vertices while preserving domination
+        # --- Postprocessing ---
+        # Remove redundant vertices while preserving domination
+        # (greedy pruning step)
         approximate_dominating_set = prune_redundant_vertices_dominating(
             working_graph, D
         )
 
     else:
-        # If reduction collapses completely, use forced vertices directly
+        # Degenerate case: reduction collapses completely
+        # Use the forced vertices directly
         approximate_dominating_set = forced_ds
 
+    # --- Reintegration of isolated vertices ---
+    # All isolated vertices must be included to ensure domination
     approximate_dominating_set.update(isolates)
+
+    # --- Verification (safety check) ---
+    # Validate that the constructed set is indeed dominating
+    # (runs in O(n + m))
+    if not nx.is_dominating_set(graph, approximate_dominating_set):
+        raise RuntimeError(
+            "Invalid solution: the computed set is not a dominating set."
+        )
 
     return approximate_dominating_set
 
