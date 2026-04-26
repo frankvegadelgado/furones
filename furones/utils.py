@@ -1,4 +1,4 @@
-# Created on 10/12/2025
+# Created on 26/07/2025
 # Author: Frank Vega
 
 import scipy.sparse as sparse
@@ -151,21 +151,21 @@ def random_matrix_tests(matrix_shape, sparsity=0.9):
 
 def string_result_format(result, count_result=False):
   """
-  Returns a string indicating the Independent Set.
+  Returns a string indicating the dominating set.
   
   Args:
-    result: None if the graph is empty, the Independent Set otherwise.
-    count_result: Count the number of nodes in the Independent Set (default is False).
+    result: None if the graph is empty, the dominating set otherwise.
+    count_result: Count the number of nodes in the dominating set (default is False).
 
   Returns:
-    - "Empty Graph" if result is None, "Independent Set Found a, b, c, ...." otherwise.
+    - "Empty Graph" if result is None, "Dominating Set Found a, b, c, ...." otherwise.
   """
   if result:
     if count_result:
-        return f"Independent Set Size {len(result)}"
+        return f"Dominating Set Size {len(result)}"
     else:
         formatted_string = f'{", ".join(f"{x + 1}" for x in result)}'
-        return f"Independent Set Found {formatted_string}"
+        return f"Dominating Set Found {formatted_string}"
   else:
      return "Empty Graph"
 
@@ -224,6 +224,32 @@ def is_vertex_redundant(graph, vertex, vertex_set):
 
     # Check if the edges covered by the vertex are a subset of the edges covered by the set
     return edges_covered_by_vertex.issubset(edges_covered_by_set)
+
+def is_vertex_cover(graph, vertex_cover):
+    """
+    Verifies if a given set of vertices is a valid dominating set for the graph.
+
+    Args:
+        graph (nx.Graph): The input graph.
+        vertex_cover (set): A set of vertices to check.
+
+    Returns:
+        bool: True if the set is a valid dominating set, False otherwise.
+    """
+    for u, v in graph.edges():
+        if u not in vertex_cover and v not in vertex_cover:
+            return False
+    return True
+
+def is_independent_set(G, subset):
+    """
+    Checks if a subset of nodes forms an independent set in the graph.
+    """
+    for u in subset:
+        for v in subset:
+            if u != v and G.has_edge(u, v):
+                return False
+    return True
 
 def compute_weight(G, nodes):
     """Compute the total weight of a set of nodes."""

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import setuptools
 
-VERSION = "0.1.3"
+VERSION = "0.1.5"
 
 NAME = "furones"
 
@@ -15,7 +15,7 @@ INSTALL_REQUIRES = [
 setuptools.setup(
     name=NAME,
     version=VERSION,
-    description="Compute the Approximate Independent Set for undirected graph encoded in DIMACS format.",
+    description="Compute the Approximate Minimum Dominating Set for undirected graph encoded in DIMACS format.",
     url="https://github.com/frankvegadelgado/furones",
     project_urls={
         "Source Code": "https://github.com/frankvegadelgado/furones",

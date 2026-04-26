@@ -1,4 +1,4 @@
-# Created on 10/12/2025
+# Created on 02/05/2025
 # Author: Frank Vega
 
 import argparse
@@ -6,15 +6,15 @@ from . import utils
 from . import app
 
 def approximate_solutions(inputDirectory, verbose=False, log=False, count=False, bruteForce=False, approximation=False):
-    """Finds an approximate Independent Set for several instances.
+    """Finds an approximate Dominating Set for several instances.
 
     Args:
         inputDirectory: Input directory path.
         verbose: Enable verbose output.
         log: Enable file logging.
-        count: Measure the size of the Independent Set.
+        count: Measure the size of the Dominating Set.
         bruteForce: Enable brute force approach.
-        approximation: Enable an approximate approach within a ratio of at most polynomial.
+        approximation: Enable an approximate approach within a logarithmic factor.
     """
     
     file_names = utils.get_file_names(inputDirectory)
@@ -29,14 +29,14 @@ def approximate_solutions(inputDirectory, verbose=False, log=False, count=False,
 def main():
     
     # Define the parameters
-    helper = argparse.ArgumentParser(prog="batch_asia", description="Compute the Approximate Independent Set for all undirected graphs encoded in DIMACS format and stored in a directory.")
+    helper = argparse.ArgumentParser(prog="batch_asia", description="Solve the Approximate Minimum Dominating Set for all undirected graphs encoded in DIMACS format and stored in a directory.")
     helper.add_argument('-i', '--inputDirectory', type=str, help='Input directory path', required=True)
-    helper.add_argument('-a', '--approximation', action='store_true', help='enable comparison with a polynomial-time approximation approach within a factor of at most 2')
+    helper.add_argument('-a', '--approximation', action='store_true', help='enable comparison with a polynomial-time approximation approach within a logarithmic factor')
     helper.add_argument('-b', '--bruteForce', action='store_true', help='enable comparison with the exponential-time brute-force approach')
-    helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Independent Set')
+    helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Dominating Set')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.1.3')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.1.5')
 
     
     # Initialize the parameters

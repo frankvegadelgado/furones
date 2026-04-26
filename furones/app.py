@@ -1,6 +1,6 @@
-#                Approximate Independent Set Solver
+#                   Approximate Minimum Dominating Set Solver
 #                          Frank Vega
-#                      October 12th, 2025
+#                      February 5th, 2025
 
 import argparse
 import time
@@ -12,15 +12,15 @@ from . import applogger
 from . import utils
 
 def approximate_solution(inputFile, verbose=False, log=False, count=False, bruteForce=False, approximation=False):
-    """Finds an approximate Independent Set.
+    """Finds an approximate Dominating Set.
 
     Args:
         inputFile: Input file path.
         verbose: Enable verbose output.
         log: Enable file logging.
-        count: Measure the size of the Independent Set.
+        count: Measure the size of the Dominating Set.
         bruteForce: Enable brute force approach.
-        approximation: Enable an approximate approach within a ratio of at most polynomial.
+        approximation: Enable an approximate approach within a logarithmic factor.
     """
     
     logger = applogger.Logger(applogger.FileLogger() if (log) else applogger.ConsoleLogger(verbose))
@@ -33,22 +33,22 @@ def approximate_solution(inputFile, verbose=False, log=False, count=False, brute
     logger.info(f"Parsing the Input File done in: {(time.time() - started) * 1000.0} milliseconds")
     
     if approximation:
-        logger.info("An approximate Solution with a polynomial-approximation ratio started")
+        logger.info("An Approximate Solution with a logarithmic approximation ratio started")
         started = time.time()
         
-        approximate_result = algorithm.find_independent_set_approximation(graph)
+        approximate_result = algorithm.find_dominating_set_approximation(graph)
 
-        logger.info(f"An approximate Solution with a polynomial-approximation ratio done in: {(time.time() - started) * 1000.0} milliseconds")
+        logger.info(f"An Approximate Solution with a logarithmic approximation ratio done in: {(time.time() - started) * 1000.0} milliseconds")
         
         answer = utils.string_result_format(approximate_result, count)
-        output = f"{filename}: (approximation) {answer}"
+        output = f"{filename}: (Approximation) {answer}"
         utils.println(output, logger, log)
 
     if bruteForce:
         logger.info("A solution with an exponential-time complexity started")
         started = time.time()
         
-        brute_force_result = algorithm.find_independent_set_brute_force(graph)
+        brute_force_result = algorithm.find_dominating_set_brute_force(graph)
 
         logger.info(f"A solution with an exponential-time complexity done in: {(time.time() - started) * 1000.0} milliseconds")
         
@@ -56,34 +56,34 @@ def approximate_solution(inputFile, verbose=False, log=False, count=False, brute
         output = f"{filename}: (Brute Force) {answer}"
         utils.println(output, logger, log)
         
-    logger.info("Our Algorithm with an approximate solution started")
+    logger.info("Our Algorithm with a near-optimal approximation solution started")
     started = time.time()
     
-    novel_result = algorithm.find_independent_set(graph)
+    novel_result = algorithm.find_dominating_set(graph)
 
-    logger.info(f"Our Algorithm with an approximate solution done in: {(time.time() - started) * 1000.0} milliseconds")
+    logger.info(f"Our Algorithm with a near-optimal approximation solution done in: {(time.time() - started) * 1000.0} milliseconds")
 
     answer = utils.string_result_format(novel_result, count)
     output = f"{filename}: {answer}"
     utils.println(output, logger, log)
     if novel_result and (bruteForce or approximation):
         if bruteForce:    
-            output = f"Exact Ratio (Optimal/Furones): {len(brute_force_result)/len(novel_result)}"
+            output = f"Exact Ratio (Furones/Optimal): {len(novel_result)/len(brute_force_result)}"
         elif approximation:
-            output = f"Approximate Ratio (Approximation/Furones): {len(approximate_result)/len(novel_result)}"
+            output = f"Upper Bound for Ratio (Furones/Optimal): {(math.log(graph.number_of_nodes())) * len(novel_result)/len(approximate_result)}"
         utils.println(output, logger, log)
           
 def main():
     
     # Define the parameters
-    helper = argparse.ArgumentParser(prog="asia", description='Compute the Approximate Independent Set for undirected graph encoded in DIMACS format.')
+    helper = argparse.ArgumentParser(prog="asia", description='Solve the Approximate Minimum Dominating Set for undirected graph encoded in DIMACS format.')
     helper.add_argument('-i', '--inputFile', type=str, help='input file path', required=True)
-    helper.add_argument('-a', '--approximation', action='store_true', help='enable comparison with a polynomial-time approximation approach within a factor of at most 2')
+    helper.add_argument('-a', '--approximation', action='store_true', help='enable comparison with a polynomial-time approximation approach within a logarithmic factor')
     helper.add_argument('-b', '--bruteForce', action='store_true', help='enable comparison with the exponential-time brute-force approach')
-    helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Independent Set')
+    helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Dominating Set')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.1.3')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.1.5')
     
     # Initialize the parameters
     args = helper.parse_args()

@@ -1,9 +1,10 @@
-# Created on 10/12/2025
+# Created on 02/05/2025
 # Author: Frank Vega
 
 import time
 import argparse
 import math
+import networkx as nx
 
 from . import algorithm
 from . import applogger
@@ -27,13 +28,13 @@ def main():
     helper.add_argument('-d', '--dimension', type=int, help="an integer specifying the dimensions of the square matrices", required=True)
     helper.add_argument('-n', '--num_tests', type=int, default=5, help="an integer specifying the number of tests to run")
     helper.add_argument('-s', '--sparsity', type=restricted_float, default=0.95, help="sparsity of the matrices (0.0 for dense, close to 1.0 for very sparse)")
-    helper.add_argument('-a', '--approximation', action='store_true', help='enable comparison with a polynomial-time approximation approach within a factor of at most 2')
+    helper.add_argument('-a', '--approximation', action='store_true', help='enable comparison with a polynomial-time approximation approach within a logarithmic factor')
     helper.add_argument('-b', '--bruteForce', action='store_true', help='enable comparison with the exponential-time brute-force approach')
-    helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Independent Set')
+    helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Dominating Set')
     helper.add_argument('-w', '--write', action='store_true', help='write the generated random matrix to a file in the current directory')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.1.3')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.1.5')
     
     # Initialize the parameters
     args = helper.parse_args()
@@ -55,28 +56,28 @@ def main():
         if sparse_matrix is None:
             continue
 
-        graph = utils.sparse_matrix_to_graph(sparse_matrix)    
+        graph = utils.sparse_matrix_to_graph(sparse_matrix) 
         logger.info(f"Matrix shape: {sparse_matrix.shape}")
         logger.info(f"Number of non-zero elements: {sparse_matrix.nnz}")
         logger.info(f"Sparsity: {1 - (sparse_matrix.nnz / (sparse_matrix.shape[0] * sparse_matrix.shape[1]))}")
         
         if approximation:
-            logger.info("An approximate Solution with a polynomial-approximation ratio started")
+            logger.info("An Approximate Solution with a logarithmic approximation ratio started")
             started = time.time()
             
-            approximate_result = algorithm.find_independent_set_approximation(graph)
+            approximate_result = algorithm.find_dominating_set_approximation(graph)
 
-            logger.info(f"An approximate Solution with a polynomial-approximation ratio done in: {(time.time() - started) * 1000.0} milliseconds")
+            logger.info(f"An Approximate Solution with a logarithmic approximation ratio done in: {(time.time() - started) * 1000.0} milliseconds")
             
             answer = utils.string_result_format(approximate_result, count)
-            output = f"{i + 1}-approximation Test: {answer}" 
+            output = f"{i + 1}-Approximation Test: {answer}" 
             utils.println(output, logger, args.log)    
     
         if bruteForce:
             logger.info("A solution with an exponential-time complexity started")
             started = time.time()
             
-            brute_force_result = algorithm.find_independent_set_brute_force(graph)
+            brute_force_result = algorithm.find_dominating_set_brute_force(graph)
 
             logger.info(f"A solution with an exponential-time complexity done in: {(time.time() - started) * 1000.0} milliseconds")
             
@@ -85,12 +86,12 @@ def main():
             utils.println(output, logger, args.log)
         
 
-        logger.info("Our Algorithm with an approximate solution started")
+        logger.info("Our Algorithm with a near-optimal approximation solution started")
         started = time.time()
         
-        novel_result = algorithm.find_independent_set(graph)
+        novel_result = algorithm.find_dominating_set(graph)
 
-        logger.info(f"Our Algorithm with an approximate solution done in: {(time.time() - started) * 1000.0} milliseconds")
+        logger.info(f"Our Algorithm with a near-optimal approximation solution done in: {(time.time() - started) * 1000.0} milliseconds")
 
         answer = utils.string_result_format(novel_result, count)
         output = f"{i + 1}-Furones Test: {answer}" 
@@ -98,9 +99,9 @@ def main():
 
         if novel_result and (bruteForce or approximation):
             if bruteForce:    
-                output = f"Exact Ratio (Optimal/Furones): {len(brute_force_result)/len(novel_result)}"
+                output = f"Exact Ratio (Furones/Optimal): {len(novel_result)/len(brute_force_result)}"
             elif approximation:
-                output = f"Approximate Ratio (Approximation/Furones): {len(approximate_result)/len(novel_result)}"
+                output = f"Upper Bound for Ratio (Furones/Optimal): {(math.log(graph.number_of_nodes())) * len(novel_result)/len(approximate_result)}"
             utils.println(output, logger, args.log)
         
 

@@ -1,50 +1,72 @@
-# Furones: Approximate Independent Set Solver
+# Furones: Approximate Dominating Set Solver
 
 ![In Loving Memory of Asia Furones (The Grandmother I Never Knew)](docs/furones.jpg)
 
-This work builds upon [A 2-Approximation for Independent Sets: The Furones Algorithm](https://dev.to/frank_vega_987689489099bf/the-furones-algorithm-15lp).
+This work builds upon [The Furones Algorithm](https://dev.to/frank_vega_987689489099bf/the-furones-algorithm-15lp).
 
 ---
 
-# Maximum Independent Set (MIS) Problem: Overview
+# Overview of the Minimum Dominating Set (MDS)
 
-## Definition
+## Definition:
 
-The **Maximum Independent Set (MIS)** problem is a fundamental NP-hard problem in graph theory. Given an undirected graph $G = (V, E)$, an _independent set_ is a subset of vertices $S \subseteq V$ where no two vertices in $S$ are adjacent. The MIS problem seeks the largest such subset $S$.
+A **dominating set** in a graph $G = (V, E)$ is a subset $D \subseteq V$ such that every vertex not in $D$ is adjacent to at least one vertex in $D$. The **minimum dominating set (MDS)** is the smallest possible dominating set in terms of the number of vertices.
 
-## Key Properties
+## Key Concepts:
 
-- **NP-Hardness**: MIS is computationally intractable (no known polynomial-time solution unless $P = NP$).
-- **Equivalent Problems**:
-  - MIS is equivalent to finding the largest _clique_ in the complement graph $\overline{G}$.
-  - It is also related to the _Minimum Vertex Cover_ problem: $S$ is an MIS iff $V \setminus S$ is a vertex cover.
+1. **Graph Representation**:
 
-## Applications
+   - $V$: Set of vertices.
+   - $E$: Set of edges connecting the vertices.
 
-1. **Scheduling**: Assigning non-conflicting tasks (e.g., scheduling exams with no shared students).
-2. **Network Design**: Selecting non-adjacent nodes for efficient resource allocation.
-3. **Bioinformatics**: Modeling protein-protein interaction networks.
+2. **Dominating Set**:
 
-## Algorithms
+   - A set $D$ where for every vertex $v \in V$, either $v \in D$ or $v$ is adjacent to some vertex in $D$.
 
-| Approach            | Description                                                            | Complexity          |
-| ------------------- | ---------------------------------------------------------------------- | ------------------- |
-| Brute-Force         | Checks all possible subsets of vertices.                               | $O(2^n)$            |
-| Greedy Heuristics   | Selects vertices with minimal degree iteratively.                      | $O(n + m)$ (approx) |
-| Dynamic Programming | Used for trees or graphs with bounded treewidth.                       | $O(3^{tw})$         |
-| Approximation       | No PTAS exists; best-known approximation ratio is $O(n / (\log n)^2)$. | NP-Hard             |
+3. **Minimum Dominating Set**:
+   - The dominating set with the smallest cardinality (i.e., the fewest number of vertices).
 
-## Example
+## Applications:
 
-For a graph with vertices $\{A, B, C\}$ and edges $\{(A,B), (B,C)\}$:
+- **Network Design**: Ensuring coverage in wireless sensor networks.
+- **Social Networks**: Identifying influential nodes.
+- **Game Theory**: Strategies in certain types of games.
+- **Biology**: Modeling protein-protein interaction networks.
 
-- **Independent Sets**: $\{A, C\}$, $\{A\}$, $\{B\}$, $\{C\}$.
-- **MIS**: $\{A, C\}$ (size 2).
+## Computational Complexity:
 
-## Open Challenges
+- **NP-Hard**: Finding the minimum dominating set is computationally intensive for large graphs.
+- **Approximation Algorithms**: Used to find near-optimal solutions in polynomial time.
 
-- Finding a constant-factor approximation for general graphs.
-- Efficient quantum or parallel algorithms for large-scale graphs.
+## Algorithms:
+
+1. **Greedy Algorithm**:
+
+   - Iteratively selects the vertex that covers the most uncovered vertices.
+   - Provides a logarithmic approximation ratio.
+
+2. **Integer Linear Programming (ILP)**:
+
+   - Formulates the problem as an optimization problem.
+   - Solvable using ILP solvers for exact solutions, though computationally expensive.
+
+3. **Heuristics and Metaheuristics**:
+   - Genetic algorithms, simulated annealing, etc., for large-scale problems.
+
+## Challenges:
+
+- **Scalability**: Exact algorithms are infeasible for very large graphs.
+- **Dynamic Graphs**: Maintaining a minimum dominating set in graphs that change over time.
+
+## Research Directions:
+
+- **Parallel Algorithms**: Leveraging multi-core processors and distributed computing.
+- **Machine Learning**: Using learning-based approaches to predict dominating sets.
+- **Hybrid Methods**: Combining exact and heuristic methods for better performance.
+
+## Conclusion:
+
+The minimum dominating set problem is a fundamental issue in graph theory with wide-ranging applications. While it is computationally challenging, various algorithms and heuristics provide practical solutions for different scenarios. Ongoing research continues to improve the efficiency and applicability of these methods.
 
 ---
 
@@ -52,7 +74,7 @@ For a graph with vertices $\{A, B, C\}$ and edges $\{(A,B), (B,C)\}$:
 
 Input: A Boolean Adjacency Matrix $M$.
 
-Answer: Find a Maximum Independent Set.
+Answer: Find a Minimum Dominating Set.
 
 ### Example Instance: 5 x 5 matrix
 
@@ -84,7 +106,7 @@ where the fields W and V specify the endpoints of the edge while the lower-case 
 
 _Example Solution:_
 
-Independent Set Found `4, 5`: Nodes `4`, and `5` constitute an optimal solution.
+Dominating Set Found `4, 5`: Nodes `4` and `5` constitute an optimal solution.
 
 ---
 
@@ -92,7 +114,7 @@ Independent Set Found `4, 5`: Nodes `4`, and `5` constitute an optimal solution.
 
 ## Prerequisites
 
-- Python ≥ 3.12
+- Python ≥ 3.10
 
 ## Installation
 
@@ -120,16 +142,16 @@ pip install furones
    **Example Output:**
 
    ```
-   testMatrix1: Independent Set Found 4, 5
+   testMatrix1: Dominating Set Found 4, 5
    ```
 
-   This indicates nodes `4, 5` form a Independent Set.
+   This indicates nodes `4, 5` form a Dominating Set.
 
 ---
 
-## Independent Set Size
+## Dominating Set Size
 
-Use the `-c` flag to count the nodes in the Independent Set:
+Use the `-c` flag to count the nodes in the Dominating Set:
 
 ```bash
 asia -i ./benchmarks/testMatrix2 -c
@@ -138,7 +160,7 @@ asia -i ./benchmarks/testMatrix2 -c
 **Output:**
 
 ```
-testMatrix2: Independent Set Size 5
+testMatrix2: Dominating Set Size 2
 ```
 
 ---
@@ -156,15 +178,15 @@ asia -h
 ```bash
 usage: asia [-h] -i INPUTFILE [-a] [-b] [-c] [-v] [-l] [--version]
 
-Compute the Approximate Independent Set for undirected graph encoded in DIMACS format.
+Solve the Approximate Minimum Dominating Set for undirected graph encoded in DIMACS format.
 
 options:
   -h, --help            show this help message and exit
   -i INPUTFILE, --inputFile INPUTFILE
                         input file path
-  -a, --approximation   enable comparison with a polynomial-time approximation approach within a factor of at most 2
+  -a, --approximation   enable comparison with a polynomial-time approximation approach within a logarithmic factor
   -b, --bruteForce      enable comparison with the exponential-time brute-force approach
-  -c, --count           calculate the size of the Independent Set
+  -c, --count           calculate the size of the Dominating Set
   -v, --verbose         anable verbose output
   -l, --log             enable file logging
   --version             show program's version number and exit
@@ -174,7 +196,7 @@ options:
 
 # Batch Execution
 
-Batch execution allows you to solve multiple graphs within a directory consecutively.
+Batch execution allows you to asia multiple graphs within a directory consecutively.
 
 To view available command-line options for the `batch_asia` command, use the following in your terminal or command prompt:
 
@@ -187,15 +209,15 @@ This will display the following help information:
 ```bash
 usage: batch_asia [-h] -i INPUTDIRECTORY [-a] [-b] [-c] [-v] [-l] [--version]
 
-Compute the Approximate Independent Set for all undirected graphs encoded in DIMACS format and stored in a directory.
+Solve the Approximate Minimum Dominating Set for all undirected graphs encoded in DIMACS format and stored in a directory.
 
 options:
   -h, --help            show this help message and exit
   -i INPUTDIRECTORY, --inputDirectory INPUTDIRECTORY
                         Input directory path
-  -a, --approximation   enable comparison with a polynomial-time approximation approach within a factor of at most 2
+  -a, --approximation   enable comparison with a polynomial-time approximation approach within a logarithmic factor
   -b, --bruteForce      enable comparison with the exponential-time brute-force approach
-  -c, --count           calculate the size of the Independent Set
+  -c, --count           calculate the size of the Dominating Set
   -v, --verbose         anable verbose output
   -l, --log             enable file logging
   --version             show program's version number and exit
@@ -220,9 +242,9 @@ options:
                         an integer specifying the number of tests to run
   -s SPARSITY, --sparsity SPARSITY
                         sparsity of the matrices (0.0 for dense, close to 1.0 for very sparse)
-  -a, --approximation   enable comparison with a polynomial-time approximation approach within a factor of at most 2
+  -a, --approximation   enable comparison with a polynomial-time approximation approach within a logarithmic factor
   -b, --bruteForce      enable comparison with the exponential-time brute-force approach
-  -c, --count           calculate the size of the Independent Set
+  -c, --count           calculate the size of the Dominating Set
   -w, --write           write the generated random matrix to a file in the current directory
   -v, --verbose         anable verbose output
   -l, --log             enable file logging
@@ -240,7 +262,7 @@ options:
 # Complexity
 
 ```diff
-+ We present a polynomial-time algorithm achieving a 2-approximation ratio for MIS, providing strong evidence that P = NP by efficiently solving a computationally hard problem with near-optimal solutions.
++ We present a linear-time algorithm for MDS, providing strong evidence that P = NP by efficiently solving a computationally hard problem with near-optimal solutions.
 ```
 
 ---

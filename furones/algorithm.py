@@ -1,282 +1,371 @@
-# Created on 10/12/2025
+# Created on 26/07/2025
 # Author: Frank Vega
 
 import itertools
 
 import networkx as nx
+from collections import defaultdict
+from typing import FrozenSet, Dict, Set, Tuple
 
-def find_independent_set(graph):
+# ────────────────────────────────────────────────────────────────────────────
+#  Public API
+# ────────────────────────────────────────────────────────────────────────────
+
+def weighted_dominating_set_max_deg4(
+    G: nx.Graph,
+    weight: str = "weight",
+) -> Tuple[FrozenSet, float]:
     """
-    Compute an approximate maximum independent set with a 2-approximation ratio.
+    Weighted minimum dominating set for graphs with maximum degree ≤ 4.
 
-    This algorithm combines iterative refinement using maximum spanning trees with greedy
-    minimum-degree and maximum-degree approaches, plus a low-degree induced subgraph heuristic,
-    ensuring a robust solution across diverse graph structures. It returns the largest of the
-    four independent sets produced.
+    A *dominating set* D satisfies: every vertex v ∉ D has ≥ 1 neighbour
+    in D.  We minimise Σ_{v ∈ D} w[v].
+
+    Three phases
+    ────────────
+    1. Primal-dual  [O(n + m)]
+       LP dual: max Σ y[v]  s.t.  Σ_{u ∈ N[v]} y[u] ≤ w[v]  ∀ v, y ≥ 0
+       slack[v] = w[v] − Σ_{u ∈ N[v]} y[u] tracks residual budget.
+       For each undominated v, raise y[v] by ε = min_{u ∈ N[v]} slack[u].
+       Every u in N[v] loses ε of slack; tight vertices (slack ≈ 0) join D
+       and cover their closed neighbourhoods.
+       → Feasible dominating set, ≤ (Δ+1)-approximation.
+
+    2. Greedy swap  [O(n · Δ²) = O(n)]
+       For each v ∈ D scan N(v) for a lighter u ∉ D that can replace v
+       without stranding any neighbour (checked in O(Δ) = O(1)).
+       → Reduces solution weight without losing feasibility.
+
+    3. Redundancy prune  [O(n + m)]
+       Remove every v ∈ D that has a D-neighbour (so v stays dominated)
+       AND whose N(v) all remain dominated via their other D-neighbours.
+       → Equivalent to the companion prune_redundant_vertices_dominating().
+
+    Parameters
+    ----------
+    G      : nx.Graph — node attribute `weight` must be set via
+                 nx.set_node_attributes(G, weights, 'weight')
+    weight : str — node-weight attribute name (default 'weight')
+
+    Returns
+    -------
+    D            : frozenset — nodes forming the weighted dominating set
+    total_weight : float    — Σ w[v] for v ∈ D
+    """
+    if G.number_of_nodes() == 0:
+        return frozenset(), 0.0
+
+    w: Dict = {v: float(G.nodes[v].get(weight, 1.0)) for v in G}
+
+    D, dom_count = _phase1_primal_dual(G, w)
+    D, dom_count = _phase2_greedy_swap(G, w, D, dom_count)
+    D            = _phase3_prune(G, D)
+
+    return D
+
+# ────────────────────────────────────────────────────────────────────────────
+#  Phase 1 — Primal-Dual Construction
+# ────────────────────────────────────────────────────────────────────────────
+
+def _phase1_primal_dual(
+    G: nx.Graph,
+    w: Dict,
+) -> Tuple[Set, Dict]:
+    """
+    O(n + m).  Builds a feasible dominating set via LP duality.
+
+    Dual program for min-weight dominating set (set-cover formulation):
+        max  Σ_v y[v]
+        s.t. Σ_{u ∈ N[v]} y[u] ≤ w[v]   for all v   (v's "budget")
+             y[v] ≥ 0
+
+    slack[v] = w[v] − Σ_{u ∈ N[v]} y[u]  is the remaining budget of v.
+    When we raise y[v] by ε = min_{u ∈ N[v]} slack[u]:
+      • every u ∈ N[v] loses ε (since v ∈ N[u] for all u ∈ N[v])
+      • the tightest u hits slack = 0 → it enters D and covers N[u]
+
+    Correctness: every undominated v gets processed → some u ∈ N[v] enters D
+    → v is covered (u = v ∈ D, or u ∈ N(v) and v ∈ N(u) → v covered).
+    """
+    slack:     Dict = {v: w[v] for v in G}
+    dominated: Set  = set()
+    D:         Set  = set()
+
+    for v in G.nodes():
+        if v in dominated:
+            continue
+
+        # Closed neighbourhood — at most Δ + 1 ≤ 5 vertices
+        Nv  = [v] + list(G.neighbors(v))
+
+        # Maximum legal raise: the tightest slack in N[v]
+        eps = min(slack[u] for u in Nv)   # O(Δ) = O(1)
+
+        # Raise y[v] by eps; every u ∈ N[v] loses eps of slack
+        for u in Nv:
+            slack[u] -= eps
+
+        # Tight vertices become dominators and cover their neighbourhoods
+        for u in Nv:
+            if slack[u] < 1e-9 and u not in D:
+                D.add(u)
+                dominated.add(u)
+                dominated.update(G.neighbors(u))  # O(Δ) = O(1)
+
+    # Build dom_count for Phase 2: dom_count[u] = |N(u) ∩ D|
+    dom_count: Dict = defaultdict(int)
+    for v in D:
+        for u in G.neighbors(v):
+            dom_count[u] += 1
+
+    return D, dom_count
+
+# ────────────────────────────────────────────────────────────────────────────
+#  Phase 2 — Greedy Weight-Reducing Swap
+# ────────────────────────────────────────────────────────────────────────────
+
+def _phase2_greedy_swap(
+    G:         nx.Graph,
+    w:         Dict,
+    D:         Set,
+    dom_count: Dict,
+) -> Tuple[Set, Dict]:
+    """
+    O(n · Δ²) = O(n) for Δ ≤ 4.  Single-pass weight-reducing swap.
+
+    For each v ∈ D, find the cheapest neighbour u ∉ D that can replace v
+    while keeping every vertex dominated.
+
+    Swap v → u is valid iff for every t ∈ N(v):
+        t ∈ D           → self-dominated, fine regardless
+      OR dom_count[t] ≥ 2  → t has another D-neighbour after v leaves
+      OR t ∈ N(u)       → u (the incoming dominator) will cover t
+
+    v itself is always dominated after the swap because u ∈ N(v) joins D.
+    """
+    dom_count = defaultdict(int, dom_count)   # local copy
+
+    for v in list(D):        # snapshot: D changes in-place during loop
+        if v not in D:
+            continue          # was swapped out by a prior iteration
+
+        best_u: object = None
+        best_w: float  = w[v]   # only accept strictly lighter replacements
+
+        for u in G.neighbors(v):
+            if u in D or w[u] >= best_w:
+                continue
+
+            # O(Δ) validity check
+            if all(
+                (t in D) or (dom_count[t] >= 2) or (t in G[u])
+                for t in G.neighbors(v)
+            ):
+                best_u, best_w = u, w[u]
+
+        if best_u is not None:
+            D.discard(v)
+            D.add(best_u)
+            for t in G.neighbors(v):
+                dom_count[t] -= 1
+            for t in G.neighbors(best_u):
+                dom_count[t] += 1
+
+    return D, dom_count
+
+# ────────────────────────────────────────────────────────────────────────────
+#  Phase 3 — Redundancy Pruning
+# ────────────────────────────────────────────────────────────────────────────
+
+def _phase3_prune(G: nx.Graph, D: Set) -> Set:
+    """
+    O(n + m).  Mirrors prune_redundant_vertices_dominating().
+
+    v ∈ D is *redundant* (safely removable) iff:
+      (a) dom_count[v] ≥ 1  — v has a D-neighbour → v stays dominated
+      (b) ∀ u ∈ N(v):  u ∈ D  OR  dom_count[u] ≥ 2
+          — every neighbour of v retains ≥ 1 D-neighbour after v leaves
+
+    dom_count is updated immediately on each removal so later checks
+    see the tighter, already-pruned state.
+    """
+    D = set(D)
+    dom_count: Dict = defaultdict(int)
+    for v in D:
+        for u in G.neighbors(v):
+            dom_count[u] += 1
+
+    for v in list(D):
+        # (a) v must remain dominated
+        if dom_count[v] < 1:
+            continue
+        # (b) every neighbour of v must remain dominated
+        if all(u in D or dom_count[u] >= 2 for u in G.neighbors(v)):
+            D.discard(v)
+            for u in G.neighbors(v):
+                dom_count[u] -= 1
+
+    return D
+
+
+def dominating_via_reduction_max_degree_4(graph):
+        # Create a working copy to avoid modifying the original graph
+        G = graph.copy()
+        weights = {}
+
+        # Reduction step: Replace each vertex with auxiliary vertices
+        # This transforms the problem into a maximum degree 1 case
+        for u in list(graph.nodes()):  # Use list to avoid modification during iteration
+            neighbors = list(G.neighbors(u))  # Get neighbors before removing node
+            G.remove_node(u)  # Remove original vertex
+            k = len(neighbors)  # Degree of original vertex
+
+            # Create auxiliary vertices and connect each to one neighbor
+            previous = None
+            for i, v in enumerate(neighbors):
+                aux_vertex = (u, i)  # Auxiliary vertex naming: (original_vertex, index)
+                G.add_edge(aux_vertex, v)
+                if previous is not None:
+                    G.add_edge(previous, v)
+                previous = aux_vertex    
+                # Weight 1/k balances Cauchy-Schwarz bounds for <2 approximation
+                weights[aux_vertex] = 1 / k**2  # k >= 1 post-isolate removal
+
+        # Verify the reduction was successful (max degree should be 1)
+        max_degree = max(dict(G.degree()).values()) if G.number_of_nodes() > 0 else 0
+        if max_degree > 4:
+            raise RuntimeError(f"Polynomial-time reduction failed: max degree is {max_degree}, expected ≤ 4")
+        nx.set_node_attributes(G, weights, 'weight')
+        
+        dominating_set = weighted_dominating_set_max_deg4(G)
+        # Extract original vertices from auxiliary vertex pairs
+        greedy_solution = {u for u, _ in dominating_set}
+
+        return greedy_solution
+
+def prune_redundant_vertices_dominating(adj, D):
+    """
+    Linear-time single-pass removal of redundant vertices from a dominating set.
+
+    A vertex v ∈ D is redundant iff:
+      (a) v itself stays dominated: has ≥ 1 neighbor remaining in D
+      (b) every neighbor u of v stays dominated:
+            u ∈ D (self-dominated), or dom_count[u] ≥ 2 (another D-neighbor survives)
+
+    Precompute dom_count in O(n + m), then check each v in O(deg(v)).
+    Updates are propagated immediately so later checks see the reduced D.
+    Total time: O(n + m).
+    """
+    D = set(D)
+
+    # dom_count[u] = number of neighbours of u currently in D
+    dom_count = {}
+    for v in D:
+        for u in adj.get(v, []):
+            dom_count[u] = dom_count.get(u, 0) + 1
+
+    for v in list(D):          # list() snapshot guards against mid-loop mutation
+        # (a) v must stay dominated once it leaves D
+        v_still_dominated = dom_count.get(v, 0) >= 1
+
+        # (b) every neighbour of v must stay dominated after v's removal
+        neighbors_still_dominated = all(
+            u in D or dom_count.get(u, 0) >= 2
+            for u in adj.get(v, [])
+        )
+
+        if v_still_dominated and neighbors_still_dominated:
+            D.remove(v)
+            # Propagate: v no longer contributes to neighbours' dom_counts
+            for u in adj.get(v, []):
+                dom_count[u] -= 1
+
+    return D
+
+def find_dominating_set(graph):
+    """
+    Approximate minimum dominating set for an undirected graph by transforming it into a bounded max-4 degree graph.
 
     Args:
-        graph (nx.Graph): An undirected NetworkX graph.
+        graph (nx.Graph): A NetworkX Graph object representing the input graph.
 
     Returns:
-        set: A maximal independent set of vertices.
+        set: A set of vertex indices representing the approximate minimum dominating set.
+             Returns an empty set if the graph is empty or has no edges.
+    Raises:
+        ValueError: If input is not a NetworkX Graph object.
     """
-    def cover_bipartite(bipartite_graph):
-        """Compute a minimum vertex cover set for a bipartite graph using matching.
-
-        Args:
-            bipartite_graph (nx.Graph): A bipartite NetworkX graph.
-
-        Returns:
-            set: A minimum vertex cover set for the bipartite graph.
-        """
-        optimal_solution = set()
-        for component in nx.connected_components(bipartite_graph):
-            subgraph = bipartite_graph.subgraph(component)
-            # Hopcroft-Karp finds a maximum matching in O(E * sqrt(V)) time
-            matching = nx.bipartite.hopcroft_karp_matching(subgraph)
-            # By König's theorem, min vertex cover == max matching in bipartite graphs
-            vertex_cover = nx.bipartite.to_vertex_cover(subgraph, matching)
-            optimal_solution.update(vertex_cover)
-        return optimal_solution
-
-    def is_independent_set(graph, independent_set):
-        """
-        Verify if a set of vertices is an independent set in the graph.
-
-        Args:
-            graph (nx.Graph): The input graph.
-            independent_set (set): Vertices to check.
-
-        Returns:
-            bool: True if the set is independent, False otherwise.
-        """
-        for u, v in graph.edges():
-            # An edge with both endpoints in the set violates independence
-            if u in independent_set and v in independent_set:
-                return False
-        return True
-
-    def greedy_min_degree_independent_set(graph):
-        """Compute an independent set by greedily selecting vertices by minimum degree.
-
-        Args:
-            graph (nx.Graph): The input graph.
-
-        Returns:
-            set: A maximal independent set.
-        """
-        if not graph:
-            return set()
-        independent_set = set()
-        # Low-degree vertices have fewer neighbors, so adding them blocks fewer future candidates
-        vertices = sorted(graph.nodes(), key=lambda v: graph.degree(v))
-        for v in vertices:
-            # Only add v if none of its neighbors are already in the set
-            if all(u not in independent_set for u in graph.neighbors(v)):
-                independent_set.add(v)
-        return independent_set
-
-    def greedy_max_degree_independent_set(graph):
-        """Compute an independent set by greedily selecting vertices by maximum degree.
-
-        Args:
-            graph (nx.Graph): The input graph.
-
-        Returns:
-            set: A maximal independent set.
-        """
-        if not graph:
-            return set()
-        independent_set = set()
-        # High-degree vertices cover more edges when excluded, potentially freeing
-        # large independent neighborhoods — a different trade-off to min-degree
-        vertices = sorted(graph.nodes(), key=lambda v: graph.degree(v), reverse=True)
-        for v in vertices:
-            # Only add v if none of its neighbors are already in the set
-            if all(u not in independent_set for u in graph.neighbors(v)):
-                independent_set.add(v)
-        return independent_set
-
-    # Validate input graph type
+    
     if not isinstance(graph, nx.Graph):
         raise ValueError("Input must be an undirected NetworkX Graph.")
 
-    # Handle trivial cases: empty or edgeless graphs
     if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
-        return set(graph)
+        return set()
 
-    # Create a working copy to preserve the original graph
     working_graph = graph.copy()
-
-    # Remove self-loops for a valid simple graph
     working_graph.remove_edges_from(list(nx.selfloop_edges(working_graph)))
+    working_graph.remove_nodes_from(list(nx.isolates(working_graph)))
 
-    # Collect isolated nodes (degree 0) for inclusion in the final set;
-    # they are trivially independent of everything and can always be included
-    isolates = set(nx.isolates(working_graph))
-    working_graph.remove_nodes_from(isolates)
-
-    # If only isolated nodes remain, return them
     if working_graph.number_of_nodes() == 0:
-        return isolates
+        return set()
 
-    # Check if the graph is bipartite for exact computation
-    if nx.bipartite.is_bipartite(working_graph):
-        # The complement of a minimum vertex cover is a maximum independent set
-        complement_based_set = set(working_graph.nodes()) - cover_bipartite(working_graph)
-    else:
-        approximate_vertex_cover = set()
-        # Process each connected component independently to reduce problem size
-        component_solutions = [working_graph.subgraph(component) for component in nx.connected_components(working_graph)]
-        while component_solutions:
-            subgraph = component_solutions.pop()
-            if subgraph.number_of_edges() == 0:
-                continue
-            if nx.bipartite.is_bipartite(subgraph):
-                # Exploit bipartiteness for an exact minimum vertex cover via König's theorem
-                approximate_vertex_cover.update(cover_bipartite(subgraph))
-            else:
-                # Fall back to a weighted vertex cover approximation for non-bipartite components
-                vertex_cover = nx.approximation.min_weighted_vertex_cover(subgraph)
+    approximate_dominating_set = set()
 
-                # Build a gadget graph G to attempt a tighter cover refinement:
-                # each vertex u in the cover is split into two copies (u, 0) and (u, 1),
-                # while vertices outside the cover keep a single triple-tuple identity.
-                # A vertex is removed from the cover only if both its copies end up covered.
-                G = nx.Graph()
-                for u, v in subgraph.edges():
-                    if u in vertex_cover and v in vertex_cover:
-                        # Both endpoints are in the cover — connect all copy pairs
-                        G.add_edge((u, 0), (v, 0))
-                        G.add_edge((u, 0), (v, 1))
-                        G.add_edge((u, 1), (v, 0))
-                        G.add_edge((u, 1), (v, 1))
-                    elif u in vertex_cover:
-                        # Only u is in the cover; v uses its single-node identity
-                        G.add_edge((u, 0), (v, v, v))
-                        G.add_edge((u, 1), (v, v, v))
-                    elif v in vertex_cover:
-                        # Only v is in the cover; u uses its single-node identity
-                        G.add_edge((u, u, u), (v, 0))
-                        G.add_edge((u, u, u), (v, 1))
-                    else:
-                        # Neither endpoint is in the cover; both use single-node identities
-                        G.add_edge((u, u, u), (v, v, v))
+    
+    for component in nx.connected_components(working_graph):
+        G = working_graph.subgraph(component)
 
-                tuple_vertex_cover = nx.approximation.min_weighted_vertex_cover(G)
+        # Reduction-based solution
+        D = dominating_via_reduction_max_degree_4(G)
 
-                # A cover vertex u can be dropped only if both its copies are covered,
-                # meaning it is provably redundant in the refined cover
-                solution = {u for u in vertex_cover if (u, 0) in tuple_vertex_cover and (u, 1) in tuple_vertex_cover}
-                if solution:
-                    approximate_vertex_cover.update(solution)
-                    # Remove the refined cover vertices and recurse on the remaining subgraph
-                    remaining_nodes = subgraph.subgraph(set(subgraph.nodes()) - solution).copy()
-                    remaining_isolates = set(nx.isolates(remaining_nodes))
-                    remaining_nodes.remove_nodes_from(remaining_isolates)
-                    if remaining_nodes.number_of_edges() > 0:
-                        new_component_solutions = [remaining_nodes.subgraph(component) for component in nx.connected_components(remaining_nodes)]
-                        component_solutions.extend(new_component_solutions)
-                else:
-                    # Refinement yielded nothing; fall back to the original cover
-                    approximate_vertex_cover.update(vertex_cover)
+        adj = {v: set(G[v]) for v in G}
 
-        # The complement of the vertex cover is a candidate independent set
-        complement_solution = set(working_graph.nodes()) - approximate_vertex_cover
+        solution = prune_redundant_vertices_dominating(adj, D)
 
-        # Greedily extend the candidate by adding any non-adjacent uncovered vertex
-        for v in working_graph.nodes():
-            if v not in complement_solution:
-                # Check if v is independent of the current set complement_solution
-                if not any(working_graph.has_edge(v, u) for u in complement_solution):
-                    complement_solution.add(v)
-        complement_based_set = complement_solution
+        approximate_dominating_set.update(solution)
 
-    # Compute greedy solutions (min and max degree) to ensure robust performance
-    min_greedy_solution = greedy_min_degree_independent_set(working_graph)
-    max_greedy_solution = greedy_max_degree_independent_set(working_graph)
+    return approximate_dominating_set
 
-    # Additional candidate: restrict to nodes below maximum degree, where local
-    # density is lower and greedy selection may find a larger independent set
-    low_set = set()
-    if working_graph.number_of_nodes() > 0:
-        max_deg = max(working_graph.degree(v) for v in working_graph)
-        low_deg_nodes = [v for v in working_graph if working_graph.degree(v) < max_deg]
-        if low_deg_nodes:
-            low_sub = working_graph.subgraph(low_deg_nodes)
-            low_set = greedy_min_degree_independent_set(low_sub)
-
-    # Pick the largest independent set across all four candidates
-    candidates = [complement_based_set, min_greedy_solution, max_greedy_solution, low_set]
-    approximate_independent_set = max(candidates, key=len)
-
-    # Re-add isolated nodes — they are always safe to include
-    approximate_independent_set.update(isolates)
-    if not is_independent_set(graph, approximate_independent_set):
-        raise RuntimeError(f"Polynomial-time algorithm failed: the set {approximate_independent_set} is not independent")
-    return approximate_independent_set
-
-def find_independent_set_brute_force(graph):
+def find_dominating_set_brute_force(graph):
     """
-    Computes an exact independent set in exponential time.
+    Computes an exact minimum dominating set in exponential time.
 
     Args:
         graph: A NetworkX Graph.
 
     Returns:
-        A set of vertex indices representing the exact Independent Set, or None if the graph is empty.
+        A set of vertex indices representing the exact dominating set, or None if the graph is empty.
     """
-    def is_independent_set(graph, independent_set):
-        """
-        Verifies if a given set of vertices is a valid Independent Set for the graph.
 
-        Args:
-            graph (nx.Graph): The input graph.
-            independent_set (set): A set of vertices to check.
-
-        Returns:
-            bool: True if the set is a valid Independent Set, False otherwise.
-        """
-        for u in independent_set:
-            for v in independent_set:
-                if u != v and graph.has_edge(u, v):
-                    return False
-        return True
-    
     if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
         return None
 
     n_vertices = len(graph.nodes())
 
-    n_max_vertices = 0
-    best_solution = None
-
-    for k in range(1, n_vertices + 1): # Iterate through all possible sizes of the cover
+    for k in range(1, n_vertices + 1): # Iterate through all possible sizes of the dominating set
         for candidate in itertools.combinations(graph.nodes(), k):
-            cover_candidate = set(candidate)
-            if is_independent_set(graph, cover_candidate) and len(cover_candidate) > n_max_vertices:
-                n_max_vertices = len(cover_candidate)
-                best_solution = cover_candidate
+            dominating_candidate = set(candidate)
+            if nx.dominating.is_dominating_set(graph, dominating_candidate):
+                return dominating_candidate
                 
-    return best_solution
+    return None
 
 
 
-def find_independent_set_approximation(graph):
+def find_dominating_set_approximation(graph):
     """
-    Computes an approximate Independent Set in polynomial time with an approximation ratio of at most 2 for undirected graphs.
+    Computes an approximate dominating set in polynomial time with a logarithmic approximation ratio for undirected graphs.
 
     Args:
         graph: A NetworkX Graph.
 
     Returns:
-        A set of vertex indices representing the approximate Independent Set, or None if the graph is empty.
+        A set of vertex indices representing the approximate dominating set, or None if the graph is empty.
     """
 
     if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
         return None
 
-    #networkx doesn't have a guaranteed independent set function, so we use approximation
-    complement_graph = nx.complement(graph)
-    independent_set = nx.approximation.max_clique(complement_graph)
-    return independent_set
+    #networkx doesn't have a guaranteed minimum dominating set function, so we use approximation
+    dominating_set = nx.approximation.min_weighted_dominating_set(graph)
+    return dominating_set
