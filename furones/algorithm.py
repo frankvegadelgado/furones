@@ -39,7 +39,7 @@ def prune_redundant_vertices_dominating(G: nx.Graph, D: Set) -> Set:
 
     return D
 
-def find_dominating_set(graph, eps=0.5):
+def find_dominating_set(graph, eps=1):
     """
     Compute an approximate minimum dominating set (MDS) of an undirected graph.
 
