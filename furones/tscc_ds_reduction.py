@@ -20,11 +20,6 @@ Changes vs. v0.2.2 (largest-component version)
      The global dominating set is:
 
            lift(ds_list) = forced_ds ∪ ⋃_i ds_list[i]
-
-  3. All other behaviour is as in the fixed & optimised version:
-       - cascade is O(n + m),
-       - greedy planar subgraph is O(m · α(n)) amortised,
-       - 2-edge-connected components via nx.k_edge_components are O(n + m).
 """
 
 from __future__ import annotations
@@ -123,17 +118,6 @@ def _greedy_planar_subgraph(G: nx.Graph) -> nx.Graph:
     """
     Build a maximal planar spanning subgraph of G.
 
-    Original algorithm:  O(m · n)
-      — called nx.check_planarity(P) from scratch after every edge insertion.
-
-    New algorithm:  O(m · α(n))  amortised
-      — nx.check_planarity returns a PlanarEmbedding object when the graph IS
-        planar.  We keep that embedding and attempt to extend it edge-by-edge
-        using embedding.add_half_edge_* without rebuilding from scratch.
-        If the quick extension succeeds the embedding is updated in-place
-        (O(1)).  Only on failure we fall back to a full re-check on the
-        smaller graph that *excludes* the offending edge.
-
     Bridges are prioritised: adding a bridge cannot create a K5/K3,3 minor,
     so we insert them first for free — improving the chance of admitting
     more edges later.
@@ -230,21 +214,6 @@ def reduce_to_tscc_for_ds(
           - treat this TSCC reduction as a subroutine inside a larger
             component-wise DS pipeline.
 
-    Complexity
-    ----------
-    Step                        | Cost
-    ─────────────────────────────┼────────────────────
-    Cascade 1                   | O(n + m)
-    Planarity check             | O(n)
-    Greedy planar subgraph      | O(m · α(n)) *
-    Cascade 2                   | O(n + m)
-    2-EC decomposition          | O(n + m)
-    ─────────────────────────────┼────────────────────
-    Total                       | O(m · α(n)) *
-
-    * Amortised; worst-case for adversarial near-planar inputs remains O(n²)
-      due to fallback full re-checks, but this is tight only on pathological
-      instances and not observed in practice.
     """
     # ── Initialise working copy ──────────────────────────────────────────
     H = nx.Graph(G)
