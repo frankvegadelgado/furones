@@ -54,7 +54,6 @@ def find_dominating_set(graph, eps=1):
           (1 + ε)-approximation with respect to the reduced graph.
         • The overall approximation factor depends on the reduction and lifting
           steps and is typically small in practice.
-        • The running time is O(n + m) · f(1/ε) for fixed ε.
 
     Args:
         graph (nx.Graph):
