@@ -54,7 +54,7 @@ def find_dominating_set(graph, eps=1):
           achieves a (1 + eps)-approximation on each TSCC.
         - The overall approximation factor depends on the reduction and lifting
           steps and is typically small in practice.
-        - The running time is O(m * alpha(n)) amortised for fixed eps.  [v0.2.3]
+        - The running time is O(m^2) for fixed eps.  [v0.2.4]
 
     Args:
         graph (nx.Graph): An undirected NetworkX graph.

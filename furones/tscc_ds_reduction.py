@@ -1,5 +1,5 @@
 """
-tscc_ds_reduction.py  —  v0.2.3  (TSCC components, domination-safe)
+tscc_ds_reduction.py  —  v0.2.4  (TSCC components, domination-safe)
 ===================================================================
 
 Changes vs. v0.2.2 (largest-component version)
