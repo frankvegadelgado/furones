@@ -44,33 +44,28 @@ def find_dominating_set(graph, eps=1):
     Compute an approximate minimum dominating set (MDS) of an undirected graph.
 
     The algorithm combines structural reductions with Baker's PTAS for planar graphs.
-    Specifically, it reduces the input to a planar 2-connected core (TSCC form),
-    applies a (1 + ε)-approximation scheme on the reduced instance, and lifts the
+    Specifically, it reduces the input to a planar 2-edge-connected core (TSCC form),
+    applies a (1 + eps)-approximation scheme on the reduced instance, and lifts the
     solution back to the original graph.
 
     Guarantees:
-        • For general graphs, the algorithm returns a valid dominating set.
-        • If the reduced instance is planar, the solution achieves a
-          (1 + ε)-approximation with respect to the reduced graph.
-        • The overall approximation factor depends on the reduction and lifting
+        - For general graphs, the algorithm returns a valid dominating set.
+        - If the reduced instance is planar, the solution achieves a
+          (1 + eps)-approximation with respect to the reduced graph.
+        - The overall approximation factor depends on the reduction and lifting
           steps and is typically small in practice.
-        • The running time is O(n + m) · f(1/ε) for fixed ε.
+        - The running time is O(m * alpha(n)) amortised for fixed eps.  [v0.2.2]
 
     Args:
-        graph (nx.Graph):
-            An undirected NetworkX graph.
-        eps (float):
-            Approximation parameter ε ∈ (0, 1].
+        graph (nx.Graph): An undirected NetworkX graph.
+        eps (float):      Approximation parameter eps in (0, 1].
 
     Returns:
-        set:
-            A dominating set of the input graph.
+        set: A dominating set of the input graph.
 
     Raises:
-        ValueError:
-            If the input is invalid or ε ∉ (0, 1].
-        RuntimeError:
-            If a required structural assumption is violated.
+        ValueError:  If the input is invalid or eps not in (0, 1].
+        RuntimeError: If a required structural assumption is violated.
     """
 
     # --- Parameter validation ---
