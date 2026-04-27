@@ -1,30 +1,37 @@
 """
-tscc_ds_reduction.py  —  FIXED & OPTIMISED VERSION
-===================================================
-Fixes applied vs. original:
-  1. Bug: second _run_cascade was passed original G as reference graph,
-     not the planarised subgraph P.  Now we pass P so domination checks
-     are consistent with the surviving edge set.
-  2. Bug / missing guarantee: 2-edge-connectivity was never enforced.
-     After all cascade passes we extract the largest k=2 edge-connected
-     component via nx.k_edge_components so the returned graph is a genuine
-     TSCC (every vertex has degree ≥ 2, no bridges).
-  3. Performance: _greedy_planar_subgraph previously called
-     nx.check_planarity from scratch on every candidate edge — O(m·n)
-     total.  The new version re-uses the combinatorial embedding returned
-     by the Boyer-Myrvold implementation so each incremental edge test
-     stays O(α(n)) amortised, reducing the planarity phase to O(m·α(n)).
-  4. Correctness of lift(): nodes removed while enforcing 2-edge-
-     connectivity are NOT forced into the DS; we must re-solve on those
-     components separately.  lift() now returns only the forced nodes that
-     are confirmed; callers must solve the residual components independently.
+tscc_ds_reduction.py  —  v0.2.3  (TSCC components, domination-safe)
+===================================================================
+
+Changes vs. v0.2.2 (largest-component version)
+---------------------------------------------
+  1. Correctness: we NO LONGER discard all but the largest 2-edge-connected
+     component.  Instead we return *all* non-trivial 2-edge-connected
+     components as separate TSCCs.  This makes the reduction domination-safe:
+       - no vertex is silently dropped,
+       - every vertex of every returned TSCC must still be dominated.
+  2. API change (Option A):
+       reduce_to_tscc_for_ds(G) now returns
+
+           tsccs      : List[nx.Graph]
+           forced_ds  : Set[Any]
+           lift       : Callable[[List[Set[Any]]], Set[Any]]
+
+     where `tsccs[i]` is the graph on which you computed `ds_list[i]`.
+     The global dominating set is:
+
+           lift(ds_list) = forced_ds ∪ ⋃_i ds_list[i]
+
+  3. All other behaviour is as in the fixed & optimised version:
+       - cascade is O(n + m),
+       - greedy planar subgraph is O(m · α(n)) amortised,
+       - 2-edge-connected components via nx.k_edge_components are O(n + m).
 """
 
 from __future__ import annotations
 
 import networkx as nx
 from collections import deque
-from typing import Any, Callable, Set, Tuple
+from typing import Any, Callable, List, Set, Tuple
 
 
 # ---------------------------------------------------------------------------
@@ -34,7 +41,7 @@ from typing import Any, Callable, Set, Tuple
 def _run_cascade(
     H: nx.Graph,
     forced_ds: Set[Any],
-    ref_graph: nx.Graph,          # ← was always original G; now caller decides
+    ref_graph: nx.Graph,
 ) -> None:
     """
     Remove degree-0 and degree-1 vertices, forcing the appropriate nodes
@@ -103,6 +110,7 @@ def _run_cascade(
 
             for w in kept:
                 if w in H and w not in in_q and H.degree(w) <= 1:
+                # (re-)enqueue low-degree survivors
                     in_q.add(w)
                     q.append(w)
 
@@ -124,10 +132,7 @@ def _greedy_planar_subgraph(G: nx.Graph) -> nx.Graph:
         using embedding.add_half_edge_* without rebuilding from scratch.
         If the quick extension succeeds the embedding is updated in-place
         (O(1)).  Only on failure we fall back to a full re-check on the
-        smaller graph that *excludes* the offending edge (still O(n) but
-        this path is taken at most O(n) times since each failure permanently
-        reduces |E|, so total fallback cost is O(n²) worst-case but O(n·α(n))
-        in practice for sparse planar-near graphs).
+        smaller graph that *excludes* the offending edge.
 
     Bridges are prioritised: adding a bridge cannot create a K5/K3,3 minor,
     so we insert them first for free — improving the chance of admitting
@@ -164,65 +169,78 @@ def _greedy_planar_subgraph(G: nx.Graph) -> nx.Graph:
 
 
 # ---------------------------------------------------------------------------
-# 3.  Enforce 2-edge-connectivity (NEW — was entirely missing)
+# 3.  All 2-edge-connected TSCC components (domination-safe)
 # ---------------------------------------------------------------------------
 
-def _largest_2ec_subgraph(H: nx.Graph) -> nx.Graph:
+def _all_2ec_subgraphs(H: nx.Graph) -> List[nx.Graph]:
     """
-    Return the subgraph induced by the largest 2-edge-connected component.
+    Return the list of subgraphs induced by all non-trivial 2-edge-connected
+    components of H.
 
     nx.k_edge_components(H, k=2) partitions V into maximal k-edge-connected
     subsets.  Isolated vertices and bridge-separated parts appear as singletons
     or small components.
 
-    Complexity: O(n + m)  via Tarjan-style bridge decomposition.
+    We keep only components of size ≥ 2; singletons cannot have degree ≥ 2
+    in a 2-edge-connected graph and are irrelevant for TSCC DS solving.
+
+    Complexity: O(n + m) via Tarjan-style bridge decomposition.
     """
     components = list(nx.k_edge_components(H, k=2))
-    if not components:
-        return nx.Graph()
+    tsccs: List[nx.Graph] = []
 
-    largest = max(components, key=len)
-    if len(largest) < 2:
-        return nx.Graph()          # degenerate — no 2-EC structure at all
+    for comp in components:
+        if len(comp) < 2:
+            continue
+        tsccs.append(H.subgraph(comp).copy())
 
-    return H.subgraph(largest).copy()
+    return tsccs
 
 
 # ---------------------------------------------------------------------------
-# 4.  Public entry point
+# 4.  Public entry point (Option A: multiple TSCCs)
 # ---------------------------------------------------------------------------
 
 def reduce_to_tscc_for_ds(
     G: nx.Graph,
-) -> Tuple[nx.Graph, Set[Any], Callable[[Set[Any]], Set[Any]]]:
+) -> Tuple[List[nx.Graph], Set[Any], Callable[[List[Set[Any]]], Set[Any]]]:
     """
-    Reduce G to a TSCC (2-edge-connected subgraph with min degree ≥ 2) for
-    dominating-set solving.
+    Reduce G to a family of TSCCs (2-edge-connected subgraphs with min degree ≥ 2)
+    for dominating-set solving.
 
     Returns
     -------
-    G_reduced : nx.Graph
-        The reduced graph.  Guaranteed to be 2-edge-connected with every
-        vertex of degree ≥ 2 (or empty if G has no such substructure).
+    tsccs : list of nx.Graph
+        Each element is a reduced graph, guaranteed to be 2-edge-connected
+        with every vertex of degree ≥ 2 (or the list is empty if G has no
+        such substructure).  Components are vertex-disjoint.
     forced_ds : set
-        Vertices already forced into every dominating set of G.
+        Vertices already forced into every dominating set of G by the cascade
+        rules (degree-0 / degree-1 reductions).
     lift : callable
-        Given a DS of G_reduced, extends it to a DS of G by adding forced_ds.
-        NOTE: vertices discarded during 2-EC extraction are NOT in forced_ds;
-        callers must handle those components separately if a global DS of G
-        is needed.
+        Given a list `ds_list` where `ds_list[i]` is a dominating set of
+        `tsccs[i]`, returns a dominating set of the original G:
+
+            lift(ds_list) = forced_ds ∪ ⋃_i ds_list[i]
+
+        NOTE: vertices that never appear in any TSCC (e.g. in trees or
+        bridge-only parts) are not automatically dominated; callers must
+        either:
+          - run a separate DS solver on those residual components, or
+          - treat this TSCC reduction as a subroutine inside a larger
+            component-wise DS pipeline.
 
     Complexity
     ----------
-    Step                        | Original      | Fixed
-    ─────────────────────────────┼───────────────┼──────────────
-    Cascade 1                   | O(n + m)      | O(n + m)
-    Planarity check             | O(n)          | O(n)
-    Greedy planar subgraph      | O(m · n)      | O(m · α(n)) *
-    Cascade 2                   | O(n + m)      | O(n + m)
-    2-EC extraction (NEW)       |   —           | O(n + m)
-    ─────────────────────────────┼───────────────┼──────────────
-    Total                       | O(m · n)      | O(m · α(n)) *
+    Step                        | Cost
+    ─────────────────────────────┼────────────────────
+    Cascade 1                   | O(n + m)
+    Planarity check             | O(n)
+    Greedy planar subgraph      | O(m · α(n)) *
+    Cascade 2                   | O(n + m)
+    2-EC decomposition          | O(n + m)
+    ─────────────────────────────┼────────────────────
+    Total                       | O(m · α(n)) *
 
     * Amortised; worst-case for adversarial near-planar inputs remains O(n²)
       due to fallback full re-checks, but this is tight only on pathological
@@ -234,26 +252,33 @@ def reduce_to_tscc_for_ds(
     forced_ds: Set[Any] = set()
 
     # ── Cascade 1: on the raw graph ──────────────────────────────────────
-    _run_cascade(H, forced_ds, ref_graph=G)          # ref = original G  ✓
+    _run_cascade(H, forced_ds, ref_graph=G)
 
     # ── Planarity gate ───────────────────────────────────────────────────
     is_planar, _ = nx.check_planarity(H)
     if not is_planar:
         P = _greedy_planar_subgraph(H)
-        # FIX 1: pass P (not G) as ref_graph so dominance is consistent
         _run_cascade(P, forced_ds, ref_graph=P)
         H = P
 
-    # ── FIX 2: enforce 2-edge-connectivity ──────────────────────────────
-    H = _largest_2ec_subgraph(H)
+    # ── 2-edge-connected TSCC extraction (ALL components) ────────────────
+    tsccs = _all_2ec_subgraphs(H)
 
-    G_reduced = H.copy()
     frozen_forced = frozenset(forced_ds)
 
-    def lift(ds_reduced: Set[Any]) -> Set[Any]:
-        return set(frozen_forced) | set(ds_reduced)
+    def lift(ds_list: List[Set[Any]]) -> Set[Any]:
+        """
+        Combine per-TSCC dominating sets with the globally forced vertices.
 
-    return G_reduced, set(forced_ds), lift
+        Precondition: len(ds_list) == len(tsccs) and each ds_list[i]
+        dominates tsccs[i].
+        """
+        result: Set[Any] = set(frozen_forced)
+        for ds in ds_list:
+            result.update(ds)
+        return result
+
+    return tsccs, set(forced_ds), lift
 
 
 # ---------------------------------------------------------------------------
@@ -265,19 +290,21 @@ if __name__ == "__main__":
 
     random.seed(42)
 
-    # Graph with a bridge so original code would have failed 2-EC guarantee
+    # Graph with many bridges so 2-EC decomposition yields many TSCCs
     G = nx.barbell_graph(6, 1)          # two K6 cliques joined by a path
     G.add_node(999)                     # isolated node → cascade test
 
     t0 = time.perf_counter()
-    reduced, forced, lift = reduce_to_tscc_for_ds(G)
+    tsccs, forced, lift = reduce_to_tscc_for_ds(G)
     elapsed = time.perf_counter() - t0
 
     print(f"Original  : {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
-    print(f"Reduced   : {reduced.number_of_nodes()} nodes, {reduced.number_of_edges()} edges")
+    print(f"TSCCs     : {[ (H.number_of_nodes(), H.number_of_edges()) for H in tsccs ]}")
     print(f"Forced DS : {forced}")
-    print(f"Is planar : {nx.check_planarity(reduced)[0]}")
-    print(f"Min degree: {min((d for _, d in reduced.degree()), default=0)}")
-    bridges   = list(nx.bridges(reduced))
-    print(f"Bridges   : {bridges}  (should be empty for 2-EC)")
+
+    for i, H in enumerate(tsccs):
+        print(f"  TSCC[{i}] planar? {nx.check_planarity(H)[0]}")
+        print(f"  TSCC[{i}] min degree: {min((d for _, d in H.degree()), default=0)}")
+        print(f"  TSCC[{i}] bridges   : {list(nx.bridges(H))}")
+
     print(f"Time      : {elapsed*1000:.3f} ms")

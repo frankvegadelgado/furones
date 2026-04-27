@@ -45,16 +45,16 @@ def find_dominating_set(graph, eps=1):
 
     The algorithm combines structural reductions with Baker's PTAS for planar graphs.
     Specifically, it reduces the input to a planar 2-edge-connected core (TSCC form),
-    applies a (1 + eps)-approximation scheme on the reduced instance, and lifts the
-    solution back to the original graph.
+    applies a (1 + eps)-approximation scheme on each reduced TSCC component, and lifts
+    the solutions back to the original graph.
 
     Guarantees:
         - For general graphs, the algorithm returns a valid dominating set.
-        - If the reduced instance is planar, the solution achieves a
-          (1 + eps)-approximation with respect to the reduced graph.
+        - If each reduced TSCC is planar (as ensured by the reduction), the solution
+          achieves a (1 + eps)-approximation on each TSCC.
         - The overall approximation factor depends on the reduction and lifting
           steps and is typically small in practice.
-        - The running time is O(m * alpha(n)) amortised for fixed eps.  [v0.2.2]
+        - The running time is O(m * alpha(n)) amortised for fixed eps.  [v0.2.3]
 
     Args:
         graph (nx.Graph): An undirected NetworkX graph.
@@ -69,94 +69,84 @@ def find_dominating_set(graph, eps=1):
     """
 
     # --- Parameter validation ---
-    # Ensure ε is within the admissible PTAS range
     if eps <= 0 or eps > 1:
         raise ValueError("epsilon must be in this interval (0, 1].")
 
-    # Ensure the input is an undirected NetworkX graph
     if not isinstance(graph, nx.Graph):
         raise ValueError("Input must be an undirected NetworkX Graph.")
 
     # --- Trivial cases ---
-    # If the graph has no vertices or no edges, domination is trivial
     if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
         return set()
 
     # --- Preprocessing ---
-    # Work on a cleaned copy of the graph:
-    #   • remove self-loops (irrelevant for domination)
-    #   • remove isolated vertices (handled separately)
     working_graph = graph.copy()
     working_graph.remove_edges_from(list(nx.selfloop_edges(working_graph)))
 
-    # Isolated vertices must belong to every dominating set
     isolates = set(nx.isolates(working_graph))
     working_graph.remove_nodes_from(isolates)
 
-    # If all vertices were isolated, they form the unique dominating set
     if working_graph.number_of_nodes() == 0:
         return isolates
 
     # --- Reduction phase ---
-    # Reduce to a planar TSCC instance:
-    #   • G_reduced: reduced planar core
-    #   • forced_ds: vertices forced into any dominating set
-    #   • lift: maps solutions of G_reduced back to the original graph
-    G_reduced, forced_ds, lift = tscc_ds_reduction.reduce_to_tscc_for_ds(
+    # tsccs: list of reduced TSCC components
+    # forced_ds: vertices forced into any dominating set
+    # lift: maps list of DSs on tsccs back to the original graph
+    tsccs, forced_ds, lift = tscc_ds_reduction.reduce_to_tscc_for_ds(
         working_graph
     )
 
-    # Baker's PTAS requires planarity of the reduced instance
-    if not nx.is_planar(G_reduced):
-        raise RuntimeError("2-connected edge graph is not planar.")
+    ds_list = []
 
-    # --- PTAS phase (on reduced graph) ---
-    if G_reduced:
+    # --- PTAS phase (per TSCC component) ---
+    for G_reduced in tsccs:
+        if not nx.is_planar(G_reduced):
+            raise RuntimeError("TSCC component is not planar after reduction.")
+
+        if G_reduced.number_of_nodes() == 0:
+            ds_list.append(set())
+            continue
+
         # Relabel vertices to consecutive integers [0, ..., n-1]
-        # (required by the PTAS implementation)
         mapping = {u: k for k, u in enumerate(G_reduced.nodes())}
         unmapping = {k: u for u, k in mapping.items()}
 
         # Build the internal graph representation expected by Baker's algorithm
-        G = baker_algo.Graph(G_reduced.number_of_nodes())
+        G_int = baker_algo.Graph(G_reduced.number_of_nodes())
         for u, v in G_reduced.edges():
-            G.add_edge(mapping[u], mapping[v])
+            G_int.add_edge(mapping[u], mapping[v])
 
-        # Compute a (1 + ε)-approximate dominating set on the reduced graph
-        ptas_sol = baker_algo.baker_ptas(G, eps, verbose=False)
+        # Compute a (1 + ε)-approximate dominating set on this TSCC
+        ptas_sol = baker_algo.baker_ptas(G_int, eps, verbose=False)
 
-        # Translate the solution back to original vertex labels of G_reduced
+        # Translate back to original labels of this TSCC
         md_reduced = {unmapping[u] for u in ptas_sol}
+        ds_list.append(md_reduced)
 
-        # --- Lifting phase ---
-        # Extend the reduced solution to a valid dominating set of the original graph
-        D = lift(md_reduced)
-
+    # --- Lifting phase ---
+    if tsccs:
+        D = lift(ds_list)
     else:
-        # Degenerate case: reduction collapses completely
-        # Use the forced vertices directly
-        D = forced_ds
+        # No TSCC structure; rely only on forced vertices
+        D = set(forced_ds)
 
     # --- Postprocessing ---
-    # Remove redundant vertices while preserving domination
-    # (greedy pruning step)
     approximate_dominating_set = prune_redundant_vertices_dominating(
         working_graph, D
     )
 
-    # --- Reintegration of isolated vertices ---
-    # All isolated vertices must be included to ensure domination
+    # Reintegration of isolated vertices
     approximate_dominating_set.update(isolates)
 
     # --- Verification (safety check) ---
-    # Validate that the constructed set is indeed dominating
-    # (runs in O(n + m))
     if not nx.is_dominating_set(graph, approximate_dominating_set):
         raise RuntimeError(
             "Invalid solution: the computed set is not a dominating set."
         )
 
     return approximate_dominating_set
+
 
 def find_dominating_set_brute_force(graph):
     """
