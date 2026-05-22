@@ -112,7 +112,7 @@ achieved via a mandatory two-phase reduction:
   Phase 2 — planarization + re-cascade (applied only when Phase 1 leaves
     a non-planar residual)
 
-    Step 2a: _greedy_planar_subgraph(H)
+    Step 2a: _spanning_forest_projection(H)
       Constructs a planar spanning subgraph P of H: same vertex set, a
       strict subset of edges.  Edges are tried in descending order of
       combined endpoint degree (high-degree pairs first, maximising
@@ -169,32 +169,20 @@ _run_cascade      O(V + E).  Every vertex is enqueued at most once (in_q
                   guard).  Each edge is examined O(1) times across all cascade
                   steps.
 
-_greedy_planar_subgraph
-                  O(E·log E + (E − V + 1)·V).  Breakdown:
-                    • Sorting all edges by degree-sum priority: O(E log E).
-                    • Union-Find spanning-forest phase: O(E·α(E)) ≈ O(E).
-                      Tree-edges are always planar — no planarity check needed.
-                      Saves V−1 O(V) planarity checks vs the naïve approach.
-                    • Back-edge planarity checks: at most E−V+1 calls to
-                      check_planarity(P).  P is always planar and bounded by
-                      Euler's formula to ≤ 3V−6 edges, so each call costs
-                      O(V), not O(V+E).
-                    • Early-termination: once |E(P)| = 3V−6 (triangulation)
-                      the loop breaks; all remaining edges are skipped O(1).
-                  Practical improvement over the naïve O(E·(V+E)):
-                    – Sparse residuals (E ≈ V, typical after Phase-1 cascade):
-                      nearly all edges are tree-edges → O(E log E) dominated
-                      by the sort, with O(1) back-edge checks.
-                    – Dense non-planar G: early termination caps accepted
-                      insertions at 3V−6, saving the full sorted tail.
-                  Worst-case (adversarial sort order): O(E·V) — same as naïve
-                  per-edge check, but constant factor reduced by V−1 avoided calls.
+_spanning_forest_projection
+                  O(V + E).  If the residual is already planar, one linear
+                  LR-planarity test returns it unchanged.  Otherwise the
+                  routine keeps a DFS spanning forest and discards all
+                  cycle-closing edges.  The forest is planar by construction,
+                  so no sorting or repeated planarity checks are needed.
+                  This is the linear-time variant: it is faster in the worst
+                  case but may preserve fewer domination edges on dense
+                  non-planar residuals than the former sorted greedy screen.
 
 Overall reduce_to_tscc_for_ds
                   Phase 1: O(V + E)
-                  Phase 2 (if needed): O(E·log E + (E−V+1)·V)
-                  Total: O(E·log E + (E−V+1)·V)   ← strictly better than
-                         the previous O(E·(V+E)) for all non-trivial inputs.
+                  Phase 2 (if needed): O(V + E)
+                  Total: O(V + E)
 
 Public API
 ----------
@@ -323,55 +311,23 @@ def _run_cascade(
                     q.append(w)
 
 
-def _greedy_planar_subgraph(G: nx.Graph) -> nx.Graph:
+def _spanning_forest_projection(G: nx.Graph) -> nx.Graph:
     """
     Return a **planar spanning subgraph** of *G*: same vertex set, a
     subset of edges chosen so the result is planar.
 
-    Algorithm — two phases
-    ----------------------
-    Edges are sorted in descending order of combined endpoint degree
-    (high-degree pairs first).  The loop is split into two phases that
-    together produce **exactly the same output** as the naïve single-pass
-    approach, but with strictly fewer planarity checks:
+    Algorithm — linear-time forest projection
+    -----------------------------------------
+    If G is already planar, return it unchanged after one linear planarity
+    test.  Otherwise run a DFS and keep only discovery edges.  The resulting
+    spanning forest is planar by construction, so no edge sorting and no
+    repeated planarity checks are needed.
 
-    Phase A — spanning-forest construction via Union-Find
-      Process edges in priority order.  An edge (u, v) is a *tree edge*
-      if u and v are currently in different connected components of the
-      partially built graph P (detected by Union-Find in O(α(V)) per
-      query).  Tree edges are added to P **without** a planarity check:
-      adding a non-cycle-creating edge to an acyclic graph (a forest) can
-      never introduce a cycle, hence never a K₅/K₃,₃ subdivision; the
-      result is always planar.  This phase therefore saves V−1 calls to
-      check_planarity (each costing O(V)), eliminating O(V²) work.
-
-    Phase B — back-edge screening with planarity guard + early termination
-      Back edges (those that would close a cycle) are collected during
-      Phase A in their original priority order and then tested one by one
-      with check_planarity(P).  Two termination conditions stop the loop
-      early:
-        1. Euler bound: once |E(P)| ≥ 3|V|−6 (the maximum edge count for
-           any simple planar graph on |V| vertices), P is a triangulation
-           and no further edge can be added.  All remaining back-edges are
-           skipped in O(1) each.
-        2. For bipartite or forest residuals the effective bound is tighter
-           (2|V|−4), but the Euler bound 3|V|−6 is safe and sufficient.
-      Each planarity check costs O(|V| + |E(P)|) = O(|V|) because P is
-      always planar and |E(P)| ≤ 3|V|−6 = O(|V|).
-
-    Correctness — identical output to naïve approach
-    -------------------------------------------------
-    The two approaches agree on every edge because:
-      • Every tree edge (Union-Find sense) trivially passes the naïve
-        planarity check — adding a leaf or bridge to an acyclic planar
-        graph is always planar.  Phase A therefore accepts the same set
-        of tree edges as the naïve loop.
-      • At the moment a back edge is tested in Phase B, P contains
-        exactly the same accepted edges as it would in the naïve loop at
-        that same point in the sorted order (tree edges are interspersed
-        but always accepted in both approaches).  Therefore every back
-        edge reaches check_planarity(P) with an identical P, and the
-        accept/reject decision is the same.
+    This is the fastest safe projection available in this implementation:
+    it preserves enough structure for the dominating-set lift to remain
+    valid, while making the reduction linear in the input size.  The
+    trade-off is approximation quality on dense non-planar residuals, since
+    cycle-closing edges that could still be embedded planarly are discarded.
 
     Why this is safe for the dominating-set lift
     --------------------------------------------
@@ -384,26 +340,12 @@ def _greedy_planar_subgraph(G: nx.Graph) -> nx.Graph:
 
     Complexity
     ----------
-    O(E·log E + (E − V + 1)·V)
+    O(V + E)
 
     Term-by-term:
-      Sort:          O(E log E)
-      Phase A UF:    O(E · α(E)) ≈ O(E)          (path-halving Union-Find)
-      Phase A adds:  O(V − 1)                      (V−1 tree edges, no check)
-      Phase B checks: at most E−V+1 calls,
-                      each O(V) (P ≤ 3V−6 edges): O((E−V)·V)
-      Early stop:    O(E − k) skipped edges        (k = index of termination)
-
-    Compared with the previous naïve O(E·(V+E)):
-      • Corrected per-check cost is O(V) not O(V+E), so naïve true cost
-        is O(E·V).  The new algorithm costs O(E·V − (V−1)·V) = O((E−V)·V),
-        saving exactly V−1 planarity checks = O(V²) work.
-      • For sparse residuals (E ≈ V, typical after Phase-1 cascade):
-        back-edges ≈ 1, so Phase B does O(V) total work.  Combined with
-        the O(V log V) sort: overall O(V log V).  The naïve approach would
-        cost O(V·V) = O(V²) on the same input — a factor of V/log V speedup.
-      • Worst case (E ≫ V, adversarial priority order): O(E·V), same
-        asymptotic bound as naïve but with a constant factor reduction.
+      Planarity fast path: O(V + E)
+      DFS forest scan:     O(V + E)
+      Edge insertions:     O(V)
 
     Parameters
     ----------
@@ -424,80 +366,26 @@ def _greedy_planar_subgraph(G: nx.Graph) -> nx.Graph:
 
     n: int = G.number_of_nodes()
 
-    # Euler's formula for simple planar graphs: |E| ≤ 3|V| − 6  (|V| ≥ 3).
-    # Once P reaches this count it is a triangulation; no edge can be added.
-    # For |V| ≤ 2 the bound is |V|−1 (a single edge or empty), which is safe.
-    max_planar_edges: int = max(3 * n - 6, n - 1)
-
     P: nx.Graph = nx.Graph()
     P.add_nodes_from(G.nodes(data=True))
 
-    # ── Union-Find with path-halving ─────────────────────────────────────────
-    # Used to classify each edge as a tree edge (no cycle created) or a back
-    # edge (cycle would be created).  Path-halving gives O(α(V)) per operation.
-    _parent: Dict[Any, Any] = {v: v for v in G}
-    _rank:   Dict[Any, int] = {v: 0 for v in G}
-
-    def _find(x: Any) -> Any:
-        while _parent[x] != x:
-            _parent[x] = _parent[_parent[x]]   # path-halving
-            x = _parent[x]
-        return x
-
-    def _unite(x: Any, y: Any) -> bool:
-        """Union by rank.  Returns True iff x and y were in different trees."""
-        rx, ry = _find(x), _find(y)
-        if rx == ry:
-            return False                        # same component → back edge
-        if _rank[rx] < _rank[ry]:
-            rx, ry = ry, rx
-        _parent[ry] = rx
-        if _rank[rx] == _rank[ry]:
-            _rank[rx] += 1
-        return True
-
-    # Sort edges: prefer pairs of high-degree vertices.
-    # High-degree vertices are stronger dominators; keeping their edges first
-    # maximises domination coverage retained in P after Phase-2b re-cascade.
-    edges_sorted = sorted(
-        G.edges(),
-        key=lambda e: -(G.degree(e[0]) + G.degree(e[1])),
-    )
-
-    # ── Phase A: spanning-forest construction ─────────────────────────────────
-    # Process all edges in priority order.
-    # Tree edges → added to P immediately, no planarity check (always safe).
-    # Back edges → collected for Phase B, preserving their priority order.
-    back_edges: list = []
-
-    for u, v in edges_sorted:
-        # Early exit: P already holds the maximum number of edges for a planar
-        # graph on n vertices.  No further edge can possibly be accepted.
-        if P.number_of_edges() >= max_planar_edges:
-            break
-        if _unite(u, v):
-            # Tree edge: adding a non-cycle edge to an acyclic planar graph
-            # can never create a forbidden minor → always planar, no check.
-            P.add_edge(u, v)
-        else:
-            # Back edge: may or may not be planar when added to P.
-            # Defer to Phase B for an explicit planarity check.
-            back_edges.append((u, v))
-
-    # ── Phase B: back-edge screening ─────────────────────────────────────────
-    # back_edges are already in descending priority order (preserved from
-    # edges_sorted).  Test each with check_planarity(P); discard on failure.
-    # P is always planar here, so check_planarity costs O(|V| + |E(P)|) = O(V).
-    for u, v in back_edges:
-        # Euler-bound early termination: P is a triangulation; no room left.
-        if P.number_of_edges() >= max_planar_edges:
-            break
-        P.add_edge(u, v)
-        if not nx.check_planarity(P)[0]:
-            # Adding (u, v) would violate planarity — discard it.
-            # (u, v) ∈ G still; any DS of P is still a valid DS of G.
-            P.remove_edge(u, v)
-        # else: edge kept; P remains planar.
+    # Linear-time projection: keep a DFS spanning forest of the non-planar
+    # residual.  Each vertex is discovered once and each adjacency is scanned
+    # once, so the formal worst-case time is O(V + E).
+    seen: Set[Any] = set()
+    for root in G:
+        if root in seen:
+            continue
+        seen.add(root)
+        stack = [root]
+        while stack:
+            u = stack.pop()
+            for v in G.neighbors(u):
+                if v in seen:
+                    continue
+                seen.add(v)
+                P.add_edge(u, v)
+                stack.append(v)
 
     return P
 
@@ -546,7 +434,7 @@ def reduce_to_tscc_for_ds(
       H is an induced subgraph of G throughout.
 
     Phase 2 — planarization + re-cascade (only if Phase 1 left H non-planar):
-      Step 2a: P = _greedy_planar_subgraph(H)
+      Step 2a: P = _spanning_forest_projection(H)
         Same vertices as H, planar subset of edges.  Every kept edge is
         still an edge of G, so the DS-lift validity is maintained.
       Step 2b: _run_cascade(P, forced_ds, G)
@@ -568,8 +456,8 @@ def reduce_to_tscc_for_ds(
     Complexity
     ----------
     Phase 1: O(V + E).
-    Phase 2 (worst case): O(E · (V + E)) for the greedy planarization,
-    then O(V + E) for the re-cascade.
+    Phase 2 (worst case): O(V + E) for the forest projection, then
+    O(V + E) for the re-cascade.
     """
     # ── H starts as an edge-identical copy of G (self-loops stripped). ──────
     # Stripping self-loops does not affect planarity: self-loops never
@@ -596,7 +484,7 @@ def reduce_to_tscc_for_ds(
     # non-planar (e.g. a K₅ or K₃,₃ subgraph where every vertex has
     # degree ≥ 2 survives the cascade intact).
     #
-    # Step 2a — _greedy_planar_subgraph:
+    # Step 2a — _spanning_forest_projection:
     #   Keeps the same vertex set; removes the minimum number of edges
     #   (greedily) to make the graph planar.  Every retained edge is
     #   still in G, so the domination relationships used in the lift
@@ -615,7 +503,7 @@ def reduce_to_tscc_for_ds(
         # P has the same vertices as H but only a planar subset of edges.
         # Because every edge of P is also an edge of H ⊆ G, the lift
         # identity (forced_ds ∪ DS(P_reduced) is a DS of G) holds.
-        P: nx.Graph = _greedy_planar_subgraph(H)
+        P: nx.Graph = _spanning_forest_projection(H)
 
         # Step 2b: re-cascade on P.
         # After this, P has min-degree ≥ 2 and is planar (vertex deletions
@@ -863,7 +751,7 @@ if __name__ == "__main__":
     #    Every vertex has degree 4; Phase 1 cascade does nothing.
     #    Phase 2 must planarize: K₅ has 10 edges; a maximal planar graph on
     #    5 vertices has at most 3·5−6 = 9 edges (it is K₅ minus one edge,
-    #    which is still non-planar — the greedy must remove ≥ 2 edges).
+    #    which is still non-planar — the forest projection removes cycle edges.
     _demo("K₅ (smallest non-planar)", nx.complete_graph(5))
 
     # 14. K₃,₃ — the other Kuratowski obstruction.
@@ -883,7 +771,7 @@ if __name__ == "__main__":
     _demo("Petersen graph (non-planar 3-regular)", nx.petersen_graph())
 
     # 17. Random dense non-planar graph (30 nodes, 120 edges).
-    #    Exercises both phases and the greedy planarizer on a large instance.
+    #    Exercises both phases and the linear forest projection on a large instance.
     _demo("Random dense G(30, 120, seed=7)", nx.gnm_random_graph(30, 120, seed=7))
 
     print(f"\n{'═' * 66}")

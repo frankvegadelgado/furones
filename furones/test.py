@@ -34,7 +34,8 @@ def main():
     helper.add_argument('-w', '--write', action='store_true', help='write the generated random matrix to a file in the current directory')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.2.6')
+    helper.add_argument('--consistency', action='store_true', help='require a polynomial certificate for the Furones 2-approximation bound')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.2.7')
     
     # Initialize the parameters
     args = helper.parse_args()
@@ -46,6 +47,7 @@ def main():
     count = args.count
     bruteForce = args.bruteForce
     approximation = args.approximation
+    consistency = args.consistency
     # Perform the tests    
     for i in range(num_tests):
         
@@ -89,7 +91,13 @@ def main():
         logger.info("Our Algorithm with a near-optimal approximation solution started")
         started = time.time()
         
-        novel_result = algorithm.find_dominating_set(graph)
+        try:
+            novel_result = algorithm.find_dominating_set(graph, consistency=consistency)
+        except algorithm.ApproximationNotCertifiedError as exc:
+            logger.info(f"Our Algorithm consistency check failed in: {(time.time() - started) * 1000.0} milliseconds")
+            output = f"{i + 1}-Furones Test: (Not certified) {exc}"
+            utils.println(output, logger, args.log)
+            continue
 
         logger.info(f"Our Algorithm with a near-optimal approximation solution done in: {(time.time() - started) * 1000.0} milliseconds")
 

@@ -5,7 +5,7 @@ import argparse
 from . import utils
 from . import app
 
-def approximate_solutions(inputDirectory, verbose=False, log=False, count=False, bruteForce=False, approximation=False):
+def approximate_solutions(inputDirectory, verbose=False, log=False, count=False, bruteForce=False, approximation=False, consistency=False):
     """Finds an approximate Dominating Set for several instances.
 
     Args:
@@ -15,6 +15,7 @@ def approximate_solutions(inputDirectory, verbose=False, log=False, count=False,
         count: Measure the size of the Dominating Set.
         bruteForce: Enable brute force approach.
         approximation: Enable an approximate approach within a logarithmic factor.
+        consistency: Require a polynomial certificate for the Furones 2-approximation bound.
     """
     
     file_names = utils.get_file_names(inputDirectory)
@@ -23,7 +24,7 @@ def approximate_solutions(inputDirectory, verbose=False, log=False, count=False,
         for file_name in file_names:
             inputFile = f"{inputDirectory}/{file_name}"
             print(f"Test: {inputDirectory}/{file_name}")
-            app.approximate_solution(inputFile, verbose, log, count, bruteForce, approximation)
+            app.approximate_solution(inputFile, verbose, log, count, bruteForce, approximation, consistency)
 
 
 def main():
@@ -36,7 +37,8 @@ def main():
     helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Dominating Set')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.2.6')
+    helper.add_argument('--consistency', action='store_true', help='require a polynomial certificate for the Furones 2-approximation bound')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.2.7')
 
     
     # Initialize the parameters
@@ -46,7 +48,8 @@ def main():
                log=args.log,
                count=args.count,
                bruteForce=args.bruteForce,
-               approximation=args.approximation)
+               approximation=args.approximation,
+               consistency=args.consistency)
 
 
 if __name__ == "__main__":

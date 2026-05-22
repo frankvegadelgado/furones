@@ -176,7 +176,7 @@ asia -h
 **Output:**
 
 ```bash
-usage: asia [-h] -i INPUTFILE [-a] [-b] [-c] [-v] [-l] [--version]
+usage: asia [-h] -i INPUTFILE [-a] [-b] [-c] [-v] [-l] [--consistency] [--version]
 
 Solve the Approximate Minimum Dominating Set for undirected graph encoded in DIMACS format.
 
@@ -189,6 +189,7 @@ options:
   -c, --count           calculate the size of the Dominating Set
   -v, --verbose         anable verbose output
   -l, --log             enable file logging
+  --consistency         require a polynomial certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 ```
 
@@ -207,7 +208,7 @@ batch_asia -h
 This will display the following help information:
 
 ```bash
-usage: batch_asia [-h] -i INPUTDIRECTORY [-a] [-b] [-c] [-v] [-l] [--version]
+usage: batch_asia [-h] -i INPUTDIRECTORY [-a] [-b] [-c] [-v] [-l] [--consistency] [--version]
 
 Solve the Approximate Minimum Dominating Set for all undirected graphs encoded in DIMACS format and stored in a directory.
 
@@ -220,8 +221,33 @@ options:
   -c, --count           calculate the size of the Dominating Set
   -v, --verbose         anable verbose output
   -l, --log             enable file logging
+  --consistency         require a polynomial certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 ```
+
+---
+
+## NPBench Experiments
+
+The NPBench benchmark instances are not uploaded to this repository. Anyone can download the DIMACS clique-complement instances from:
+
+<https://github.com/dynaroars/npbench/tree/master/instances/vertex_cover/clique_complement>
+
+ThanhVu Nguyen and Thang Bui, **NP-Complete Benchmark Instances**, <https://roars.dev/npbench/>. The folder uses the vertex-cover DIMACS clique complements as hard dominating-set instances.
+
+Run the certified batch experiment with:
+
+```bash
+python -m furones.batch -i ./experiments/ -c -l --consistency
+```
+
+or equivalently:
+
+```bash
+batch_asia -i ./experiments/ -c -l --consistency
+```
+
+The `--consistency` flag requires Furones to return only when its polynomial consistency checks certify the 2-approximation bound. The logged NPBench run used in the paper is stored as `experiments/np_bench.txt`.
 
 ---
 
@@ -230,7 +256,7 @@ options:
 A command-line utility named `test_asia` is provided for evaluating the Algorithm using randomly generated, large sparse matrices. It supports the following options:
 
 ```bash
-usage: test_asia [-h] -d DIMENSION [-n NUM_TESTS] [-s SPARSITY] [-a] [-b] [-c] [-w] [-v] [-l] [--version]
+usage: test_asia [-h] -d DIMENSION [-n NUM_TESTS] [-s SPARSITY] [-a] [-b] [-c] [-w] [-v] [-l] [--consistency] [--version]
 
 The Furones Testing Application using randomly generated, large sparse matrices.
 
@@ -248,6 +274,7 @@ options:
   -w, --write           write the generated random matrix to a file in the current directory
   -v, --verbose         anable verbose output
   -l, --log             enable file logging
+  --consistency         require a polynomial certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 ```
 
@@ -262,7 +289,7 @@ options:
 # Complexity
 
 ```diff
-+ We present a polynomial-time algorithm for MDS, providing strong evidence that P = NP by efficiently solving a computationally hard problem with near-optimal solutions.
++ We present a polynomial-time algorithm for MDS by efficiently solving a computationally hard problem with near-optimal solutions.
 ```
 
 ---

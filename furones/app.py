@@ -11,7 +11,7 @@ from . import parser
 from . import applogger
 from . import utils
 
-def approximate_solution(inputFile, verbose=False, log=False, count=False, bruteForce=False, approximation=False):
+def approximate_solution(inputFile, verbose=False, log=False, count=False, bruteForce=False, approximation=False, consistency=False):
     """Finds an approximate Dominating Set.
 
     Args:
@@ -21,6 +21,7 @@ def approximate_solution(inputFile, verbose=False, log=False, count=False, brute
         count: Measure the size of the Dominating Set.
         bruteForce: Enable brute force approach.
         approximation: Enable an approximate approach within a logarithmic factor.
+        consistency: Require a polynomial certificate for the Furones 2-approximation bound.
     """
     
     logger = applogger.Logger(applogger.FileLogger() if (log) else applogger.ConsoleLogger(verbose))
@@ -59,7 +60,13 @@ def approximate_solution(inputFile, verbose=False, log=False, count=False, brute
     logger.info("Our Algorithm with a near-optimal approximation solution started")
     started = time.time()
     
-    novel_result = algorithm.find_dominating_set(graph)
+    try:
+        novel_result = algorithm.find_dominating_set(graph, consistency=consistency)
+    except algorithm.ApproximationNotCertifiedError as exc:
+        logger.info(f"Our Algorithm consistency check failed in: {(time.time() - started) * 1000.0} milliseconds")
+        output = f"{filename}: (Not certified) {exc}"
+        utils.println(output, logger, log)
+        return
 
     logger.info(f"Our Algorithm with a near-optimal approximation solution done in: {(time.time() - started) * 1000.0} milliseconds")
 
@@ -83,7 +90,8 @@ def main():
     helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Dominating Set')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.2.6')
+    helper.add_argument('--consistency', action='store_true', help='require a polynomial certificate for the Furones 2-approximation bound')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.2.7')
     
     # Initialize the parameters
     args = helper.parse_args()
@@ -92,7 +100,8 @@ def main():
                log=args.log,
                count=args.count,
                bruteForce=args.bruteForce,
-               approximation=args.approximation)
+               approximation=args.approximation,
+               consistency=args.consistency)
   
 
 if __name__ == "__main__":

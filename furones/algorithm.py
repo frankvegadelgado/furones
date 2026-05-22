@@ -9,6 +9,11 @@ from . import baker_algo
 from collections import defaultdict
 from typing import Dict, Set
 
+
+class ApproximationNotCertifiedError(RuntimeError):
+    """Raised when polynomial consistency checks cannot certify a 2-bound."""
+
+
 def prune_redundant_vertices_dominating(G: nx.Graph, D: Set) -> Set:
     """
     O(n + m).  Mirrors prune_redundant_vertices_dominating().
@@ -39,7 +44,32 @@ def prune_redundant_vertices_dominating(G: nx.Graph, D: Set) -> Set:
 
     return D
 
-def find_dominating_set(graph, eps=1):
+
+def is_two_approximation_certified(
+    graph: nx.Graph,
+    reduced_graph: nx.Graph,
+    forced_ds: Set,
+    dominating_set: Set,
+) -> bool:
+    """
+    Polynomial sufficient check for the proved 2-approximation cases.
+
+    The certificate is intentionally conservative.  It accepts the tight case
+    and the non-tight case covered by the proved inequality |F| >= 2|F_R|.
+    It does not claim a universal 2-approximation for general graphs.
+    """
+    if not nx.is_dominating_set(graph, dominating_set):
+        return False
+
+    reduced_nodes = set(reduced_graph.nodes())
+    forced_boundary = {
+        v for v in reduced_nodes
+        if any(u in forced_ds for u in graph.neighbors(v))
+    }
+    return not forced_boundary or len(forced_ds) >= 2 * len(forced_boundary)
+
+
+def find_dominating_set(graph, eps=1, consistency=False):
     """
     Compute an approximate minimum dominating set (MDS) of an undirected graph.
 
@@ -61,6 +91,10 @@ def find_dominating_set(graph, eps=1):
         eps (float):
             Approximation parameter ε ∈ (0, 1].
 
+        consistency (bool):
+            If True, require a polynomial certificate for the proved
+            2-approximation cases. No exponential fallback is used.
+
     Returns:
         set:
             A dominating set of the input graph.
@@ -70,6 +104,9 @@ def find_dominating_set(graph, eps=1):
             If the input is invalid or ε ∉ (0, 1].
         RuntimeError:
             If a required structural assumption is violated.
+        ApproximationNotCertifiedError:
+            If consistency=True and the current polynomial proof conditions do
+            not certify a 2-approximation for this instance.
     """
 
     # --- Parameter validation ---
@@ -82,9 +119,11 @@ def find_dominating_set(graph, eps=1):
         raise ValueError("Input must be an undirected NetworkX Graph.")
 
     # --- Trivial cases ---
-    # If the graph has no vertices or no edges, domination is trivial
-    if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
+    # If the graph has no vertices, domination is trivial
+    if graph.number_of_nodes() == 0:
         return set()
+    if graph.number_of_edges() == 0:
+        return set(graph.nodes())
 
     # --- Preprocessing ---
     # Work on a cleaned copy of the graph:
@@ -160,6 +199,20 @@ def find_dominating_set(graph, eps=1):
             "Invalid solution: the computed set is not a dominating set."
         )
 
+    if consistency:
+        certified = is_two_approximation_certified(
+            working_graph,
+            G_reduced,
+            forced_ds,
+            approximate_dominating_set - isolates,
+        )
+        if not certified:
+            raise ApproximationNotCertifiedError(
+                "Polynomial consistency checks cannot certify a 2-approximation "
+                "for this instance. A universal polynomial 2-approximation for "
+                "general Dominating Set would imply P = NP."
+            )
+
     return approximate_dominating_set
 
 def find_dominating_set_brute_force(graph):
@@ -173,8 +226,10 @@ def find_dominating_set_brute_force(graph):
         A set of vertex indices representing the exact dominating set, or None if the graph is empty.
     """
 
-    if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
-        return None
+    if graph.number_of_nodes() == 0:
+        return set()
+    if graph.number_of_edges() == 0:
+        return set(graph.nodes())
 
     n_vertices = len(graph.nodes())
 
