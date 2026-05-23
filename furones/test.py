@@ -34,8 +34,8 @@ def main():
     helper.add_argument('-w', '--write', action='store_true', help='write the generated random matrix to a file in the current directory')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--consistency', action='store_true', help='require a polynomial certificate for the Furones 2-approximation bound')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.2.7')
+    helper.add_argument('--consistency', action='store_true', help='require a linear-time certificate for the Furones 2-approximation bound')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.2.8')
     
     # Initialize the parameters
     args = helper.parse_args()
@@ -94,8 +94,19 @@ def main():
         try:
             novel_result = algorithm.find_dominating_set(graph, consistency=consistency)
         except algorithm.ApproximationNotCertifiedError as exc:
-            logger.info(f"Our Algorithm consistency check failed in: {(time.time() - started) * 1000.0} milliseconds")
-            output = f"{i + 1}-Furones Test: (Not certified) {exc}"
+            logger.info(f"Our Algorithm with a near-optimal approximation solution done in: {(time.time() - started) * 1000.0} milliseconds")
+            novel_result = exc.args[1]
+            answer = utils.string_result_format(novel_result, count)
+            output = f"{i + 1}-Furones Test: {answer}" 
+            utils.println(output, logger, args.log)
+            if novel_result and (bruteForce or approximation):
+                if bruteForce:    
+                    output = f"Exact Ratio (Furones/Optimal): {len(novel_result)/len(brute_force_result)}"
+                elif approximation:
+                    output = f"Upper Bound for Ratio (Furones/Optimal): {(math.log2(graph.number_of_nodes())) * len(novel_result)/len(approximate_result)}"
+                utils.println(output, logger, args.log)
+            logger.info(f"Our Algorithm consistency check failed")
+            output = f"{i + 1}-Furones Test: (Not certified) {exc.args[0]}"
             utils.println(output, logger, args.log)
             continue
 
@@ -109,7 +120,7 @@ def main():
             if bruteForce:    
                 output = f"Exact Ratio (Furones/Optimal): {len(novel_result)/len(brute_force_result)}"
             elif approximation:
-                output = f"Upper Bound for Ratio (Furones/Optimal): {(math.log(graph.number_of_nodes())) * len(novel_result)/len(approximate_result)}"
+                output = f"Upper Bound for Ratio (Furones/Optimal): {(math.log2(graph.number_of_nodes())) * len(novel_result)/len(approximate_result)}"
             utils.println(output, logger, args.log)
         
 

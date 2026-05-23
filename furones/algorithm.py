@@ -11,7 +11,7 @@ from typing import Dict, Set
 
 
 class ApproximationNotCertifiedError(RuntimeError):
-    """Raised when polynomial consistency checks cannot certify a 2-bound."""
+    """Raised when linear-time consistency checks cannot certify a 2-bound."""
 
 
 def prune_redundant_vertices_dominating(G: nx.Graph, D: Set) -> Set:
@@ -52,11 +52,12 @@ def is_two_approximation_certified(
     dominating_set: Set,
 ) -> bool:
     """
-    Polynomial sufficient check for the proved 2-approximation cases.
+    Linear-time sufficient check for the proved 2-approximation cases.
 
     The certificate is intentionally conservative.  It accepts the tight case
     and the non-tight case covered by the proved inequality |F| >= 2|F_R|.
-    It does not claim a universal 2-approximation for general graphs.
+    It does not use the post-pruning boundary alone, and it does not
+    claim a universal 2-approximation for general graphs.
     """
     if not nx.is_dominating_set(graph, dominating_set):
         return False
@@ -92,7 +93,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
             Approximation parameter ε ∈ (0, 1].
 
         consistency (bool):
-            If True, require a polynomial certificate for the proved
+            If True, require a linear-time certificate for the proved
             2-approximation cases. No exponential fallback is used.
 
     Returns:
@@ -105,7 +106,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
         RuntimeError:
             If a required structural assumption is violated.
         ApproximationNotCertifiedError:
-            If consistency=True and the current polynomial proof conditions do
+            If consistency=True and the current linear-time proof conditions do
             not certify a 2-approximation for this instance.
     """
 
@@ -208,9 +209,10 @@ def find_dominating_set(graph, eps=1, consistency=False):
         )
         if not certified:
             raise ApproximationNotCertifiedError(
-                "Polynomial consistency checks cannot certify a 2-approximation "
+                "Linear-time consistency checks cannot certify a 2-approximation "
                 "for this instance. A universal polynomial 2-approximation for "
-                "general Dominating Set would imply P = NP."
+                "general Dominating Set would imply P = NP.",
+                approximate_dominating_set
             )
 
     return approximate_dominating_set

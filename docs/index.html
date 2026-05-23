@@ -236,7 +236,7 @@ options:
   -c, --count           calculate the size of the Dominating Set
   -v, --verbose         anable verbose output
   -l, --log             enable file logging
-  --consistency         require a polynomial certificate for the Furones 2-approximation bound
+  --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 </code></pre>
 <hr>
@@ -259,7 +259,7 @@ options:
   -c, --count           calculate the size of the Dominating Set
   -v, --verbose         anable verbose output
   -l, --log             enable file logging
-  --consistency         require a polynomial certificate for the Furones 2-approximation bound
+  --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 </code></pre>
 <hr>
@@ -273,7 +273,19 @@ options:
 <p>or equivalently:</p>
 <pre><code class="language-bash">batch_asia -i ./experiments/ -c -l --consistency
 </code></pre>
-<p>The <code>--consistency</code> flag requires Furones to return only when its polynomial consistency checks certify the 2-approximation bound. The logged NPBench run used in the paper is stored as <code>experiments/np_bench.txt</code>.</p>
+<p>The <code>--consistency</code> flag requires Furones to return only when its linear-time sufficient consistency check certifies the 2-approximation bound. The logged NPBench run used in the paper is stored as <code>experiments/np_bench.txt</code>.</p>
+<hr>
+<h2>VC-Bench Network Experiment</h2>
+<p>The paper also reports a comparison with NetworkX's approximation implementation on a compendium selected from Cai's VC-Bench real-world graph collection:</p>
+<p>Shaowei Cai, <strong>A Collection of Large Graphs for Vertex Cover Benchmarking</strong>, <a href="https://lcs.ios.ac.cn/~caisw/graphs.html">https://lcs.ios.ac.cn/~caisw/graphs.html</a>. The collection contains undirected simple graphs from the Network Data Repository in DIMACS graph format.</p>
+<p>The VC-Bench graph instances are not uploaded to this repository; download them from Cai's page and place the selected DIMACS files in <code>network/</code> before running the command below.</p>
+<p>Run the NetworkX comparison experiment with:</p>
+<pre><code class="language-bash">python -m furones.batch -i ./network/ -c -a -l --consistency
+</code></pre>
+<p>or equivalently:</p>
+<pre><code class="language-bash">batch_asia -i ./network/ -c -a -l --consistency
+</code></pre>
+<p>The <code>-a</code> flag runs NetworkX's logarithmic-ratio approximation before Furones, so the log compares both running time and the CLI's upper-bound ratio. The logged run used in the paper is stored as <code>network/network.txt</code>; it contains one graph that is not certified by the sufficient <code>--consistency</code> check, although its logged upper-bound ratio is below 2.</p>
 <hr>
 <h1>Testing Application</h1>
 <p>A command-line utility named <code>test_asia</code> is provided for evaluating the Algorithm using randomly generated, large sparse matrices. It supports the following options:</p>
@@ -295,7 +307,7 @@ options:
   -w, --write           write the generated random matrix to a file in the current directory
   -v, --verbose         anable verbose output
   -l, --log             enable file logging
-  --consistency         require a polynomial certificate for the Furones 2-approximation bound
+  --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 </code></pre>
 <hr>

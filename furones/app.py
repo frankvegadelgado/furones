@@ -21,7 +21,7 @@ def approximate_solution(inputFile, verbose=False, log=False, count=False, brute
         count: Measure the size of the Dominating Set.
         bruteForce: Enable brute force approach.
         approximation: Enable an approximate approach within a logarithmic factor.
-        consistency: Require a polynomial certificate for the Furones 2-approximation bound.
+        consistency: Require a linear-time certificate for the Furones 2-approximation bound.
     """
     
     logger = applogger.Logger(applogger.FileLogger() if (log) else applogger.ConsoleLogger(verbose))
@@ -63,8 +63,19 @@ def approximate_solution(inputFile, verbose=False, log=False, count=False, brute
     try:
         novel_result = algorithm.find_dominating_set(graph, consistency=consistency)
     except algorithm.ApproximationNotCertifiedError as exc:
-        logger.info(f"Our Algorithm consistency check failed in: {(time.time() - started) * 1000.0} milliseconds")
-        output = f"{filename}: (Not certified) {exc}"
+        logger.info(f"Our Algorithm with a near-optimal approximation solution done in: {(time.time() - started) * 1000.0} milliseconds")
+        novel_result = exc.args[1]
+        answer = utils.string_result_format(novel_result, count)
+        output = f"{filename}: {answer}"
+        utils.println(output, logger, log)
+        if novel_result and (bruteForce or approximation):
+            if bruteForce:    
+                output = f"Exact Ratio (Furones/Optimal): {len(novel_result)/len(brute_force_result)}"
+            elif approximation:
+                output = f"Upper Bound for Ratio (Furones/Optimal): {(math.log2(graph.number_of_nodes())) * len(novel_result)/len(approximate_result)}"
+            utils.println(output, logger, log)
+        logger.info(f"Our Algorithm consistency check failed")
+        output = f"{filename}: (Not certified) {exc.args[0]}"
         utils.println(output, logger, log)
         return
 
@@ -77,7 +88,7 @@ def approximate_solution(inputFile, verbose=False, log=False, count=False, brute
         if bruteForce:    
             output = f"Exact Ratio (Furones/Optimal): {len(novel_result)/len(brute_force_result)}"
         elif approximation:
-            output = f"Upper Bound for Ratio (Furones/Optimal): {(math.log(graph.number_of_nodes())) * len(novel_result)/len(approximate_result)}"
+            output = f"Upper Bound for Ratio (Furones/Optimal): {(math.log2(graph.number_of_nodes())) * len(novel_result)/len(approximate_result)}"
         utils.println(output, logger, log)
           
 def main():
@@ -90,8 +101,8 @@ def main():
     helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Dominating Set')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--consistency', action='store_true', help='require a polynomial certificate for the Furones 2-approximation bound')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.2.7')
+    helper.add_argument('--consistency', action='store_true', help='require a linear-time certificate for the Furones 2-approximation bound')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.2.8')
     
     # Initialize the parameters
     args = helper.parse_args()

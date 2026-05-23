@@ -15,7 +15,7 @@ def approximate_solutions(inputDirectory, verbose=False, log=False, count=False,
         count: Measure the size of the Dominating Set.
         bruteForce: Enable brute force approach.
         approximation: Enable an approximate approach within a logarithmic factor.
-        consistency: Require a polynomial certificate for the Furones 2-approximation bound.
+        consistency: Require a linear-time certificate for the Furones 2-approximation bound.
     """
     
     file_names = utils.get_file_names(inputDirectory)
@@ -37,8 +37,8 @@ def main():
     helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Dominating Set')
     helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
-    helper.add_argument('--consistency', action='store_true', help='require a polynomial certificate for the Furones 2-approximation bound')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.2.7')
+    helper.add_argument('--consistency', action='store_true', help='require a linear-time certificate for the Furones 2-approximation bound')
+    helper.add_argument('--version', action='version', version='%(prog)s 0.2.8')
 
     
     # Initialize the parameters
