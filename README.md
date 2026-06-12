@@ -36,7 +36,7 @@ A **dominating set** in a graph $G = (V, E)$ is a subset $D \subseteq V$ such th
 ## Computational Complexity:
 
 - **NP-Hard**: Finding the minimum dominating set is computationally intensive for large graphs.
-- **Approximation Algorithms**: Used to find near-optimal solutions in polynomial time.
+- **Approximation Algorithms**: Used to find validated solutions in polynomial time.
 
 ## Algorithms:
 
@@ -176,7 +176,7 @@ asia -h
 **Output:**
 
 ```bash
-usage: asia [-h] -i INPUTFILE [-a] [-b] [-c] [-v] [-l] [--consistency] [--version]
+usage: asia [-h] -i INPUTFILE [-a] [-b] [-c] [-v] [-l] [--version]
 
 Solve the Approximate Minimum Dominating Set for undirected graph encoded in DIMACS format.
 
@@ -187,9 +187,8 @@ options:
   -a, --approximation   enable comparison with a polynomial-time approximation approach within a logarithmic factor
   -b, --bruteForce      enable comparison with the exponential-time brute-force approach
   -c, --count           calculate the size of the Dominating Set
-  -v, --verbose         anable verbose output
+  -v, --verbose         enable verbose output
   -l, --log             enable file logging
-  --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 ```
 
@@ -208,7 +207,7 @@ batch_asia -h
 This will display the following help information:
 
 ```bash
-usage: batch_asia [-h] -i INPUTDIRECTORY [-a] [-b] [-c] [-v] [-l] [--consistency] [--version]
+usage: batch_asia [-h] -i INPUTDIRECTORY [-a] [-b] [-c] [-v] [-l] [--version]
 
 Solve the Approximate Minimum Dominating Set for all undirected graphs encoded in DIMACS format and stored in a directory.
 
@@ -219,59 +218,22 @@ options:
   -a, --approximation   enable comparison with a polynomial-time approximation approach within a logarithmic factor
   -b, --bruteForce      enable comparison with the exponential-time brute-force approach
   -c, --count           calculate the size of the Dominating Set
-  -v, --verbose         anable verbose output
+  -v, --verbose         enable verbose output
   -l, --log             enable file logging
-  --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 ```
 
 ---
 
-## NPBench Experiments
+## Adversarial MILP Experiment
 
-The NPBench benchmark instances are not uploaded to this repository. Anyone can download the DIMACS clique-complement instances from:
-
-<https://github.com/dynaroars/npbench/tree/master/instances/vertex_cover/clique_complement>
-
-ThanhVu Nguyen and Thang Bui, **NP-Complete Benchmark Instances**, <https://roars.dev/npbench/>. The folder uses the vertex-cover DIMACS clique complements as hard dominating-set instances.
-
-Run the certified batch experiment with:
+The repository includes a compact adversarial DIMACS suite and a SciPy MILP verifier. Run it with:
 
 ```bash
-python -m furones.batch -i ./experiments/ -c -l --consistency
+python -B experiments/run_adversarial_milp.py
 ```
 
-or equivalently:
-
-```bash
-batch_asia -i ./experiments/ -c -l --consistency
-```
-
-The `--consistency` flag requires Furones to return only when its linear-time sufficient consistency check certifies the 2-approximation bound. The logged NPBench run used in the paper is stored as `experiments/np_bench.txt`.
-
----
-
-## VC-Bench Network Experiment
-
-The paper also reports a comparison with NetworkX's approximation implementation on a compendium selected from Cai's VC-Bench real-world graph collection:
-
-Shaowei Cai, **A Collection of Large Graphs for Vertex Cover Benchmarking**, <https://lcs.ios.ac.cn/~caisw/graphs.html>. The collection contains undirected simple graphs from the Network Data Repository in DIMACS graph format.
-
-The VC-Bench graph instances are not uploaded to this repository; download them from Cai's page and place the selected DIMACS files in `network/` before running the command below.
-
-Run the NetworkX comparison experiment with:
-
-```bash
-python -m furones.batch -i ./network/ -c -a -l --consistency
-```
-
-or equivalently:
-
-```bash
-batch_asia -i ./network/ -c -a -l --consistency
-```
-
-The `-a` flag runs NetworkX's logarithmic-ratio approximation before Furones, so the log compares both running time and the CLI's upper-bound ratio. The logged run used in the paper is stored as `network/network.txt`; it contains one graph that is not certified by the sufficient `--consistency` check, although its logged upper-bound ratio is below 2.
+The runner compares `furones.algorithm.find_dominating_set` against an exact MILP optimum and validates every returned set with NetworkX.
 
 ---
 
@@ -280,7 +242,7 @@ The `-a` flag runs NetworkX's logarithmic-ratio approximation before Furones, so
 A command-line utility named `test_asia` is provided for evaluating the Algorithm using randomly generated, large sparse matrices. It supports the following options:
 
 ```bash
-usage: test_asia [-h] -d DIMENSION [-n NUM_TESTS] [-s SPARSITY] [-a] [-b] [-c] [-w] [-v] [-l] [--consistency] [--version]
+usage: test_asia [-h] -d DIMENSION [-n NUM_TESTS] [-s SPARSITY] [-a] [-b] [-c] [-w] [-v] [-l] [--version]
 
 The Furones Testing Application using randomly generated, large sparse matrices.
 
@@ -296,9 +258,8 @@ options:
   -b, --bruteForce      enable comparison with the exponential-time brute-force approach
   -c, --count           calculate the size of the Dominating Set
   -w, --write           write the generated random matrix to a file in the current directory
-  -v, --verbose         anable verbose output
+  -v, --verbose         enable verbose output
   -l, --log             enable file logging
-  --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 ```
 
@@ -313,7 +274,7 @@ options:
 # Complexity
 
 ```diff
-+ We present a polynomial-time algorithm for MDS by efficiently solving a computationally hard problem with near-optimal solutions.
++ We present a polynomial-time MDS approximation algorithm with validated dominating-set outputs.
 ```
 
 ---

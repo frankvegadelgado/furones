@@ -2,263 +2,172 @@
 # Author: Frank Vega
 
 import itertools
-
-import networkx as nx
-from . import tscc_ds_reduction
-from . import baker_algo
 from collections import defaultdict
 from typing import Dict, Set
 
+import networkx as nx
 
-class ApproximationNotCertifiedError(RuntimeError):
-    """Raised when linear-time consistency checks cannot certify a 2-bound."""
+from . import approx
 
 
-def prune_redundant_vertices_dominating(G: nx.Graph, D: Set) -> Set:
+def prune_redundant_vertices_dominating(graph: nx.Graph, dominating_set: Set) -> Set:
     """
-    O(n + m).  Mirrors prune_redundant_vertices_dominating().
+    Remove vertices from a dominating set while preserving domination.
 
-    v ∈ D is *redundant* (safely removable) iff:
-      (a) dom_count[v] ≥ 1  — v has a D-neighbour → v stays dominated
-      (b) ∀ u ∈ N(v):  u ∈ D  OR  dom_count[u] ≥ 2
-          — every neighbour of v retains ≥ 1 D-neighbour after v leaves
-
-    dom_count is updated immediately on each removal so later checks
-    see the tighter, already-pruned state.
+    A selected vertex v is removable when another selected vertex dominates v,
+    and every neighbour of v remains dominated after v is deleted.
     """
-    D = set(D)
-    dom_count: Dict = defaultdict(int)
-    for v in D:
-        for u in G.neighbors(v):
-            dom_count[u] += 1
+    result = set(dominating_set)
+    missing = result - set(graph.nodes())
+    if missing:
+        raise ValueError("Dominating set contains vertices that are not in the graph.")
 
-    for v in list(D):
-        # (a) v must remain dominated
-        if dom_count[v] < 1:
+    selected_neighbour_count: Dict = defaultdict(int)
+    for v in result:
+        for u in graph.neighbors(v):
+            selected_neighbour_count[u] += 1
+
+    for v in list(result):
+        if selected_neighbour_count[v] < 1:
             continue
-        # (b) every neighbour of v must remain dominated
-        if all(u in D or dom_count[u] >= 2 for u in G.neighbors(v)):
-            D.discard(v)
-            for u in G.neighbors(v):
-                dom_count[u] -= 1
+        if all(u in result or selected_neighbour_count[u] >= 2 for u in graph.neighbors(v)):
+            result.discard(v)
+            for u in graph.neighbors(v):
+                selected_neighbour_count[u] -= 1
 
-    return D
+    return result
 
 
-def is_two_approximation_certified(
-    graph: nx.Graph,
-    reduced_graph: nx.Graph,
-    forced_ds: Set,
-    dominating_set: Set,
-) -> bool:
+def _degree_four_auxiliary_graph(component_graph: nx.Graph) -> nx.Graph:
+    """Build and validate the sequential degree-four auxiliary graph."""
+    auxiliary = component_graph.copy()
+
+    for u in list(component_graph.nodes()):
+        neighbours = list(auxiliary.neighbors(u))
+        auxiliary.remove_node(u)
+
+        first_auxiliary = None
+        previous_neighbour = None
+        for i, v in enumerate(neighbours):
+            aux_vertex = (u, i)
+            auxiliary.add_edge(aux_vertex, v)
+            if previous_neighbour is None:
+                first_auxiliary = aux_vertex
+            else:
+                auxiliary.add_edge(aux_vertex, previous_neighbour)
+            previous_neighbour = v
+
+        if len(neighbours) > 1:
+            auxiliary.add_edge(first_auxiliary, previous_neighbour)
+
+    max_degree = max(dict(auxiliary.degree()).values()) if auxiliary.number_of_nodes() else 0
+    if max_degree > 4:
+        raise RuntimeError(
+            f"Degree-four reduction failed: max degree is {max_degree}, expected <= 4."
+        )
+
+    return auxiliary
+
+
+def _project_auxiliary_solution(auxiliary_solution: Set, component_graph: nx.Graph) -> Set:
+    """Map auxiliary vertices back to original component vertices."""
+    component_nodes = set(component_graph.nodes())
+    projected = set()
+
+    for vertex in auxiliary_solution:
+        if isinstance(vertex, tuple) and len(vertex) == 2 and vertex[0] in component_nodes:
+            projected.add(vertex[0])
+        elif vertex in component_nodes:
+            projected.add(vertex)
+
+    return projected
+
+
+def _find_component_solution(component_graph: nx.Graph) -> Set:
+    """Return the smallest verified Furones candidate for one connected component."""
+    auxiliary = _degree_four_auxiliary_graph(component_graph)
+    auxiliary_result = approx.mds_lp(auxiliary)
+    if not auxiliary_result.verified:
+        raise RuntimeError("Auxiliary MDS solver returned an invalid dominating set.")
+
+    projected_solution = _project_auxiliary_solution(
+        auxiliary_result.dominating_set,
+        component_graph,
+    )
+    complement_solution = set(component_graph.nodes()) - projected_solution
+
+    for candidate in sorted((projected_solution, complement_solution), key=len):
+        if nx.dominating.is_dominating_set(component_graph, candidate):
+            return candidate
+
+    raise RuntimeError("Degree-four reduction failed: no verified candidate found.")
+
+
+def find_dominating_set(graph: nx.Graph) -> Set:
     """
-    Linear-time sufficient check for the proved 2-approximation cases.
+    Compute an approximate minimum dominating set of an undirected graph.
 
-    The certificate is intentionally conservative.  It accepts the tight case
-    and the non-tight case covered by the proved inequality |F| >= 2|F_R|.
-    It does not use the post-pruning boundary alone, and it does not
-    claim a universal 2-approximation for general graphs.
+    Returns a verified dominating set. Raises RuntimeError if the auxiliary
+    projection stage cannot validate a component candidate.
     """
-    if not nx.is_dominating_set(graph, dominating_set):
-        return False
-
-    reduced_nodes = set(reduced_graph.nodes())
-    forced_boundary = {
-        v for v in reduced_nodes
-        if any(u in forced_ds for u in graph.neighbors(v))
-    }
-    return not forced_boundary or len(forced_ds) >= 2 * len(forced_boundary)
-
-
-def find_dominating_set(graph, eps=1, consistency=False):
-    """
-    Compute an approximate minimum dominating set (MDS) of an undirected graph.
-
-    The algorithm combines structural reductions with Baker's PTAS for planar graphs.
-    Specifically, it reduces the input to a planar 2-connected core (TSCC form),
-    applies a (1 + ε)-approximation scheme on the reduced instance, and lifts the
-    solution back to the original graph.
-
-    Guarantees:
-        • For general graphs, the algorithm returns a valid dominating set.
-        • If the reduced instance is planar, the solution achieves a
-          (1 + ε)-approximation with respect to the reduced graph.
-        • The overall approximation factor depends on the reduction and lifting
-          steps and is typically small in practice.
-
-    Args:
-        graph (nx.Graph):
-            An undirected NetworkX graph.
-        eps (float):
-            Approximation parameter ε ∈ (0, 1].
-
-        consistency (bool):
-            If True, require a linear-time certificate for the proved
-            2-approximation cases. No exponential fallback is used.
-
-    Returns:
-        set:
-            A dominating set of the input graph.
-
-    Raises:
-        ValueError:
-            If the input is invalid or ε ∉ (0, 1].
-        RuntimeError:
-            If a required structural assumption is violated.
-        ApproximationNotCertifiedError:
-            If consistency=True and the current linear-time proof conditions do
-            not certify a 2-approximation for this instance.
-    """
-
-    # --- Parameter validation ---
-    # Ensure ε is within the admissible PTAS range
-    if eps <= 0 or eps > 1:
-        raise ValueError("epsilon must be in this interval (0, 1].")
-
-    # Ensure the input is an undirected NetworkX graph
     if not isinstance(graph, nx.Graph):
         raise ValueError("Input must be an undirected NetworkX Graph.")
 
-    # --- Trivial cases ---
-    # If the graph has no vertices, domination is trivial
     if graph.number_of_nodes() == 0:
         return set()
-    if graph.number_of_edges() == 0:
-        return set(graph.nodes())
 
-    # --- Preprocessing ---
-    # Work on a cleaned copy of the graph:
-    #   • remove self-loops (irrelevant for domination)
-    #   • remove isolated vertices (handled separately)
-    working_graph = graph.copy()
-    working_graph.remove_edges_from(list(nx.selfloop_edges(working_graph)))
+    cleaned_graph = graph.copy()
+    cleaned_graph.remove_edges_from(list(nx.selfloop_edges(cleaned_graph)))
 
-    # Isolated vertices must belong to every dominating set
-    isolates = set(nx.isolates(working_graph))
-    working_graph.remove_nodes_from(isolates)
+    solution = set(nx.isolates(cleaned_graph))
+    working_graph = cleaned_graph.copy()
+    working_graph.remove_nodes_from(solution)
 
-    # If all vertices were isolated, they form the unique dominating set
-    if working_graph.number_of_nodes() == 0:
-        return isolates
+    for component in nx.connected_components(working_graph):
+        component_graph = working_graph.subgraph(component).copy()
+        solution.update(_find_component_solution(component_graph))
 
-    # --- Reduction phase ---
-    # Reduce to a planar TSCC instance:
-    #   • G_reduced: reduced planar core
-    #   • forced_ds: vertices forced into any dominating set
-    #   • lift: maps solutions of G_reduced back to the original graph
-    G_reduced, forced_ds, lift = tscc_ds_reduction.reduce_to_tscc_for_ds(
-        working_graph
-    )
+    solution = prune_redundant_vertices_dominating(cleaned_graph, solution)
+    if not nx.dominating.is_dominating_set(cleaned_graph, solution):
+        raise RuntimeError("Invalid solution: the computed set is not a dominating set.")
 
-    # Baker's PTAS requires planarity of the reduced instance
-    if not nx.is_planar(G_reduced):
-        raise RuntimeError("2-connected edge graph is not planar.")
+    return solution
 
-    # --- PTAS phase (on reduced graph) ---
-    if G_reduced:
-        # Relabel vertices to consecutive integers [0, ..., n-1]
-        # (required by the PTAS implementation)
-        mapping = {u: k for k, u in enumerate(G_reduced.nodes())}
-        unmapping = {k: u for u, k in mapping.items()}
 
-        # Build the internal graph representation expected by Baker's algorithm
-        G = baker_algo.Graph(G_reduced.number_of_nodes())
-        for u, v in G_reduced.edges():
-            G.add_edge(mapping[u], mapping[v])
-
-        # Compute a (1 + ε)-approximate dominating set on the reduced graph
-        ptas_sol = baker_algo.baker_ptas(G, eps, verbose=False)
-
-        # Translate the solution back to original vertex labels of G_reduced
-        md_reduced = {unmapping[u] for u in ptas_sol}
-
-        # --- Lifting phase ---
-        # Extend the reduced solution to a valid dominating set of the original graph
-        D = lift(md_reduced)
-
-    else:
-        # Degenerate case: reduction collapses completely
-        # Use the forced vertices directly
-        D = forced_ds
-
-    # --- Postprocessing ---
-    # Remove redundant vertices while preserving domination
-    # (greedy pruning step)
-    approximate_dominating_set = prune_redundant_vertices_dominating(
-        working_graph, D
-    )
-
-    # --- Reintegration of isolated vertices ---
-    # All isolated vertices must be included to ensure domination
-    approximate_dominating_set.update(isolates)
-
-    # --- Verification (safety check) ---
-    # Validate that the constructed set is indeed dominating
-    # (runs in O(n + m))
-    if not nx.is_dominating_set(graph, approximate_dominating_set):
-        raise RuntimeError(
-            "Invalid solution: the computed set is not a dominating set."
-        )
-
-    if consistency:
-        certified = is_two_approximation_certified(
-            working_graph,
-            G_reduced,
-            forced_ds,
-            approximate_dominating_set - isolates,
-        )
-        if not certified:
-            raise ApproximationNotCertifiedError(
-                "Linear-time consistency checks cannot certify a 2-approximation "
-                "for this instance. A universal polynomial 2-approximation for "
-                "general Dominating Set would imply P = NP.",
-                approximate_dominating_set
-            )
-
-    return approximate_dominating_set
-
-def find_dominating_set_brute_force(graph):
+def find_dominating_set_brute_force(graph: nx.Graph) -> Set | None:
     """
-    Computes an exact minimum dominating set in exponential time.
+    Compute an exact minimum dominating set in exponential time.
 
-    Args:
-        graph: A NetworkX Graph.
-
-    Returns:
-        A set of vertex indices representing the exact dominating set, or None if the graph is empty.
+    Intended only for small validation instances.
     """
+    if not isinstance(graph, nx.Graph):
+        raise ValueError("Input must be an undirected NetworkX Graph.")
 
     if graph.number_of_nodes() == 0:
         return set()
     if graph.number_of_edges() == 0:
         return set(graph.nodes())
 
-    n_vertices = len(graph.nodes())
-
-    for k in range(1, n_vertices + 1): # Iterate through all possible sizes of the dominating set
-        for candidate in itertools.combinations(graph.nodes(), k):
+    nodes = list(graph.nodes())
+    for k in range(1, len(nodes) + 1):
+        for candidate in itertools.combinations(nodes, k):
             dominating_candidate = set(candidate)
             if nx.dominating.is_dominating_set(graph, dominating_candidate):
                 return dominating_candidate
-                
+
     return None
 
 
-
-def find_dominating_set_approximation(graph):
+def find_dominating_set_approximation(graph: nx.Graph) -> Set:
     """
-    Computes an approximate dominating set in polynomial time with a logarithmic approximation ratio for undirected graphs.
-
-    Args:
-        graph: A NetworkX Graph.
-
-    Returns:
-        A set of vertex indices representing the approximate dominating set, or None if the graph is empty.
+    Compute NetworkX's logarithmic-factor dominating-set approximation.
     """
+    if not isinstance(graph, nx.Graph):
+        raise ValueError("Input must be an undirected NetworkX Graph.")
 
-    if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
-        return None
+    if graph.number_of_nodes() == 0:
+        return set()
+    if graph.number_of_edges() == 0:
+        return set(graph.nodes())
 
-    #networkx doesn't have a guaranteed minimum dominating set function, so we use approximation
-    dominating_set = nx.approximation.min_weighted_dominating_set(graph)
-    return dominating_set
+    return set(nx.approximation.min_weighted_dominating_set(graph))

@@ -71,7 +71,7 @@
 <h2>Computational Complexity:</h2>
 <ul>
 <li><strong>NP-Hard</strong>: Finding the minimum dominating set is computationally intensive for large graphs.</li>
-<li><strong>Approximation Algorithms</strong>: Used to find near-optimal solutions in polynomial time.</li>
+<li><strong>Approximation Algorithms</strong>: Used to find validated solutions in polynomial time.</li>
 </ul>
 <h2>Algorithms:</h2>
 <ol>
@@ -223,7 +223,7 @@ cd furones
 <pre><code class="language-bash">asia -h
 </code></pre>
 <p><strong>Output:</strong></p>
-<pre><code class="language-bash">usage: asia [-h] -i INPUTFILE [-a] [-b] [-c] [-v] [-l] [--consistency] [--version]
+<pre><code class="language-bash">usage: asia [-h] -i INPUTFILE [-a] [-b] [-c] [-v] [-l] [--version]
 
 Solve the Approximate Minimum Dominating Set for undirected graph encoded in DIMACS format.
 
@@ -234,9 +234,8 @@ options:
   -a, --approximation   enable comparison with a polynomial-time approximation approach within a logarithmic factor
   -b, --bruteForce      enable comparison with the exponential-time brute-force approach
   -c, --count           calculate the size of the Dominating Set
-  -v, --verbose         anable verbose output
+  -v, --verbose         enable verbose output
   -l, --log             enable file logging
-  --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 </code></pre>
 <hr>
@@ -246,7 +245,7 @@ options:
 <pre><code class="language-bash">batch_asia -h
 </code></pre>
 <p>This will display the following help information:</p>
-<pre><code class="language-bash">usage: batch_asia [-h] -i INPUTDIRECTORY [-a] [-b] [-c] [-v] [-l] [--consistency] [--version]
+<pre><code class="language-bash">usage: batch_asia [-h] -i INPUTDIRECTORY [-a] [-b] [-c] [-v] [-l] [--version]
 
 Solve the Approximate Minimum Dominating Set for all undirected graphs encoded in DIMACS format and stored in a directory.
 
@@ -257,39 +256,20 @@ options:
   -a, --approximation   enable comparison with a polynomial-time approximation approach within a logarithmic factor
   -b, --bruteForce      enable comparison with the exponential-time brute-force approach
   -c, --count           calculate the size of the Dominating Set
-  -v, --verbose         anable verbose output
+  -v, --verbose         enable verbose output
   -l, --log             enable file logging
-  --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 </code></pre>
 <hr>
-<h2>NPBench Experiments</h2>
-<p>The NPBench benchmark instances are not uploaded to this repository. Anyone can download the DIMACS clique-complement instances from:</p>
-<p><a href="https://github.com/dynaroars/npbench/tree/master/instances/vertex_cover/clique_complement">https://github.com/dynaroars/npbench/tree/master/instances/vertex_cover/clique_complement</a></p>
-<p>ThanhVu Nguyen and Thang Bui, <strong>NP-Complete Benchmark Instances</strong>, <a href="https://roars.dev/npbench/">https://roars.dev/npbench/</a>. The folder uses the vertex-cover DIMACS clique complements as hard dominating-set instances.</p>
-<p>Run the certified batch experiment with:</p>
-<pre><code class="language-bash">python -m furones.batch -i ./experiments/ -c -l --consistency
+<h2>Adversarial MILP Experiment</h2>
+<p>The repository includes a compact adversarial DIMACS suite and a SciPy MILP verifier. Run it with:</p>
+<pre><code class="language-bash">python -B experiments/run_adversarial_milp.py
 </code></pre>
-<p>or equivalently:</p>
-<pre><code class="language-bash">batch_asia -i ./experiments/ -c -l --consistency
-</code></pre>
-<p>The <code>--consistency</code> flag requires Furones to return only when its linear-time sufficient consistency check certifies the 2-approximation bound. The logged NPBench run used in the paper is stored as <code>experiments/np_bench.txt</code>.</p>
-<hr>
-<h2>VC-Bench Network Experiment</h2>
-<p>The paper also reports a comparison with NetworkX's approximation implementation on a compendium selected from Cai's VC-Bench real-world graph collection:</p>
-<p>Shaowei Cai, <strong>A Collection of Large Graphs for Vertex Cover Benchmarking</strong>, <a href="https://lcs.ios.ac.cn/~caisw/graphs.html">https://lcs.ios.ac.cn/~caisw/graphs.html</a>. The collection contains undirected simple graphs from the Network Data Repository in DIMACS graph format.</p>
-<p>The VC-Bench graph instances are not uploaded to this repository; download them from Cai's page and place the selected DIMACS files in <code>network/</code> before running the command below.</p>
-<p>Run the NetworkX comparison experiment with:</p>
-<pre><code class="language-bash">python -m furones.batch -i ./network/ -c -a -l --consistency
-</code></pre>
-<p>or equivalently:</p>
-<pre><code class="language-bash">batch_asia -i ./network/ -c -a -l --consistency
-</code></pre>
-<p>The <code>-a</code> flag runs NetworkX's logarithmic-ratio approximation before Furones, so the log compares both running time and the CLI's upper-bound ratio. The logged run used in the paper is stored as <code>network/network.txt</code>; it contains one graph that is not certified by the sufficient <code>--consistency</code> check, although its logged upper-bound ratio is below 2.</p>
+<p>The runner compares <code>furones.algorithm.find_dominating_set</code> against an exact MILP optimum and validates every returned set with NetworkX.</p>
 <hr>
 <h1>Testing Application</h1>
 <p>A command-line utility named <code>test_asia</code> is provided for evaluating the Algorithm using randomly generated, large sparse matrices. It supports the following options:</p>
-<pre><code class="language-bash">usage: test_asia [-h] -d DIMENSION [-n NUM_TESTS] [-s SPARSITY] [-a] [-b] [-c] [-w] [-v] [-l] [--consistency] [--version]
+<pre><code class="language-bash">usage: test_asia [-h] -d DIMENSION [-n NUM_TESTS] [-s SPARSITY] [-a] [-b] [-c] [-w] [-v] [-l] [--version]
 
 The Furones Testing Application using randomly generated, large sparse matrices.
 
@@ -305,9 +285,8 @@ options:
   -b, --bruteForce      enable comparison with the exponential-time brute-force approach
   -c, --count           calculate the size of the Dominating Set
   -w, --write           write the generated random matrix to a file in the current directory
-  -v, --verbose         anable verbose output
+  -v, --verbose         enable verbose output
   -l, --log             enable file logging
-  --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 </code></pre>
 <hr>
@@ -317,7 +296,7 @@ options:
 </ul>
 <hr>
 <h1>Complexity</h1>
-<pre><code class="language-diff">+ We present a polynomial-time algorithm for MDS by efficiently solving a computationally hard problem with near-optimal solutions.
+<pre><code class="language-diff">+ We present a polynomial-time MDS approximation algorithm with validated dominating-set outputs.
 </code></pre>
 <hr>
 <h1>License</h1>

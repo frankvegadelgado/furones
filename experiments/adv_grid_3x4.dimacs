@@ -1,0 +1,20 @@
+c Grid graph 3x4
+c adversarial MDS test instance generated for Furones experiments
+p edge 12 17
+e 1 2
+e 2 3
+e 3 4
+e 5 6
+e 6 7
+e 7 8
+e 9 10
+e 10 11
+e 11 12
+e 1 5
+e 2 6
+e 3 7
+e 4 8
+e 5 9
+e 6 10
+e 7 11
+e 8 12

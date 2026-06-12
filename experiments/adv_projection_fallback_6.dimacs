@@ -1,0 +1,9 @@
+c Projection fallback test graph
+c adversarial MDS test instance generated for Furones experiments
+p edge 5 6
+e 1 2
+e 2 3
+e 3 4
+e 4 5
+e 5 1
+e 2 5
