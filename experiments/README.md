@@ -1,31 +1,34 @@
-# ChatGPT-assisted constant-envelope experiment
+# Furones v0.3.2 targeted ChatGPT-assisted regressions
 
-This folder contains the reproducible experiment for Furones v0.3.1.
-The experiment was created with ChatGPT assistance and uses deterministic graph
-generators, seeds, and exact bit-set search for the optimum on the tested
-instances.
+This folder contains the targeted reproducibility experiment used in the v0.3.2 manuscript.
 
-Run from the repository root:
+The experiment is intentionally small. It is not a full exhaustive benchmark battery. It was created after adversarial examples were found against earlier deterministic versions of the solver.
+
+## Purpose
+
+The script checks that Furones v0.3.2 overcomes the following reported adversarial families without adding special-case detectors:
+
+1. A planted-dominator dense graph with exact optimum 2.
+2. A decoy-clique/private-witness family with exact optimum 2 for the small cases and a planted promise set of size k for the larger cases.
+3. Small smoke-test graphs.
+
+The important point is that the new solver uses general linear candidates:
+
+- closed-degree coverage sweep;
+- low-degree-witness coverage sweep;
+- reverse-delete scans in several deterministic orders;
+- TSCC/Baker/lift candidate as the reduced-instance path.
+
+The low-degree-witness sweep is not a detector for the decoy construction. It gives higher priority to vertices that dominate many low-degree witnesses. This is a general heuristic motivated by private-neighborhood structure.
+
+## Files
+
+- `chatgpt_ratio4_regression.py`: Python script that constructs the adversarial families and runs the solver.
+- `chatgpt_ratio4_regression.json`: JSON output from the targeted run.
+
+## How to run
+
+From the repository root:
 
 ```bash
-python experiments/chatgpt_constant_experiment.py
-```
-
-The script writes `chatgpt_constant_experiment.json`, which contains the suite
-definitions, environment information, summary statistics, worst-case edge
-lists, and row-level size/ratio results.
-
-The v0.3.1 battery includes the universal-vertex adversarial family.  That
-family previously exposed the dense-edge loss of the pure forest-projection
-path; after adding the general linear closed-degree coverage sweep, the solver
-selects a singleton dominating set on every tested member of the family.
-
-Current JSON summary:
-
-- instances: 6,842;
-- maximum observed ratio: 2.0;
-- rows with ratio greater than 2: 0;
-- rows with ratio greater than 3: 0.
-
-This is evidence only.  It does not prove a universal approximation theorem for
-general Minimum Dominating Set.
+python experiments/chatgpt_ratio4_regression.py
