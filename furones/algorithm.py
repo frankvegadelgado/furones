@@ -7,16 +7,18 @@ import networkx as nx
 from . import tscc_ds_reduction
 from . import baker_algo
 from collections import defaultdict
-from typing import Dict, Set
+from typing import Any, Dict, Set
 
 
 class ApproximationNotCertifiedError(RuntimeError):
     """Raised when linear-time consistency checks cannot certify a 2-bound."""
 
 
-def prune_redundant_vertices_dominating(G: nx.Graph, D: Set) -> Set:
+def prune_redundant_vertices_dominating(G: nx.Graph, D: Set[Any]) -> Set[Any]:
     """
-    O(n + m).  Mirrors prune_redundant_vertices_dominating().
+    Remove redundant vertices while preserving domination.
+
+    Runs in O(n + m) for one pass over the current dominating set.
 
     v ∈ D is *redundant* (safely removable) iff:
       (a) dom_count[v] ≥ 1  — v has a D-neighbour → v stays dominated
@@ -48,8 +50,8 @@ def prune_redundant_vertices_dominating(G: nx.Graph, D: Set) -> Set:
 def is_two_approximation_certified(
     graph: nx.Graph,
     reduced_graph: nx.Graph,
-    forced_ds: Set,
-    dominating_set: Set,
+    forced_ds: Set[Any],
+    dominating_set: Set[Any],
 ) -> bool:
     """
     Linear-time sufficient check for the proved 2-approximation cases.
@@ -72,7 +74,7 @@ def is_two_approximation_certified(
 
 def find_dominating_set(graph, eps=1, consistency=False):
     """
-    Compute an approximate minimum dominating set (MDS) of an undirected graph.
+    Compute a Furones v0.3.0 dominating set of an undirected graph.
 
     The algorithm combines structural reductions with Baker's PTAS for planar graphs.
     Specifically, it reduces the input to a planar 2-connected core (TSCC form),
@@ -83,8 +85,9 @@ def find_dominating_set(graph, eps=1, consistency=False):
         • For general graphs, the algorithm returns a valid dominating set.
         • If the reduced instance is planar, the solution achieves a
           (1 + ε)-approximation with respect to the reduced graph.
-        • The overall approximation factor depends on the reduction and lifting
-          steps and is typically small in practice.
+        • The overall approximation factor depends on the reduction, lifting,
+          and optional consistency certificate; no exponential fallback is used
+          by this routine.
 
     Args:
         graph (nx.Graph):

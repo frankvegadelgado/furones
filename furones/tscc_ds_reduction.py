@@ -114,11 +114,10 @@ achieved via a mandatory two-phase reduction:
 
     Step 2a: _spanning_forest_projection(H)
       Constructs a planar spanning subgraph P of H: same vertex set, a
-      strict subset of edges.  Edges are tried in descending order of
-      combined endpoint degree (high-degree pairs first, maximising
-      domination coverage); an edge is kept iff its addition keeps P
-      planar, tested with the LR-planarity algorithm (O(V+E) per check,
-      implemented in NetworkX as check_planarity).
+      strict subset of edges.  The v0.3.0 implementation uses a linear
+      DFS spanning-forest projection when the residual is non-planar,
+      preserving only edges that are certainly embeddable without repeated
+      planarity tests.
 
       Why any spanning subgraph of H is safe for the lift:
         Every edge (u,v) ∈ P is also an edge of H ⊆ G (we only removed
@@ -356,7 +355,7 @@ def _spanning_forest_projection(G: nx.Graph) -> nx.Graph:
     -------
     nx.Graph
         A planar graph on V(G) with a subset of E(G).
-        Produces bit-identical output to the previous naïve implementation.
+        The projection is deterministic for the iteration order supplied by NetworkX.
     """
     # ── Fast path ────────────────────────────────────────────────────────────
     # One O(V+E) planarity check.  If G is already planar, the domination
@@ -485,10 +484,9 @@ def reduce_to_tscc_for_ds(
     # degree ≥ 2 survives the cascade intact).
     #
     # Step 2a — _spanning_forest_projection:
-    #   Keeps the same vertex set; removes the minimum number of edges
-    #   (greedily) to make the graph planar.  Every retained edge is
-    #   still in G, so the domination relationships used in the lift
-    #   remain valid for G.
+    #   Keeps the same vertex set and replaces a non-planar residual by
+    #   a DFS spanning forest.  Every retained edge is still in G, so the
+    #   domination relationships used in the lift remain valid for G.
     #
     # Step 2b — re-cascade on P:
     #   Edge removals in Step 2a can introduce new pendants/isolates

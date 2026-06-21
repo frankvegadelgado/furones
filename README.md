@@ -187,7 +187,7 @@ options:
   -a, --approximation   enable comparison with a polynomial-time approximation approach within a logarithmic factor
   -b, --bruteForce      enable comparison with the exponential-time brute-force approach
   -c, --count           calculate the size of the Dominating Set
-  -v, --verbose         anable verbose output
+  -v, --verbose         enable verbose output
   -l, --log             enable file logging
   --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
@@ -219,7 +219,7 @@ options:
   -a, --approximation   enable comparison with a polynomial-time approximation approach within a logarithmic factor
   -b, --bruteForce      enable comparison with the exponential-time brute-force approach
   -c, --count           calculate the size of the Dominating Set
-  -v, --verbose         anable verbose output
+  -v, --verbose         enable verbose output
   -l, --log             enable file logging
   --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
@@ -251,30 +251,6 @@ The `--consistency` flag requires Furones to return only when its linear-time su
 
 ---
 
-## VC-Bench Network Experiment
-
-The paper also reports a comparison with NetworkX's approximation implementation on a compendium selected from Cai's VC-Bench real-world graph collection:
-
-Shaowei Cai, **A Collection of Large Graphs for Vertex Cover Benchmarking**, <https://lcs.ios.ac.cn/~caisw/graphs.html>. The collection contains undirected simple graphs from the Network Data Repository in DIMACS graph format.
-
-The VC-Bench graph instances are not uploaded to this repository; download them from Cai's page and place the selected DIMACS files in `network/` before running the command below.
-
-Run the NetworkX comparison experiment with:
-
-```bash
-python -m furones.batch -i ./network/ -c -a -l --consistency
-```
-
-or equivalently:
-
-```bash
-batch_asia -i ./network/ -c -a -l --consistency
-```
-
-The `-a` flag runs NetworkX's logarithmic-ratio approximation before Furones, so the log compares both running time and the CLI's upper-bound ratio. The logged run used in the paper is stored as `network/network.txt`; it contains one graph that is not certified by the sufficient `--consistency` check, although its logged upper-bound ratio is below 2.
-
----
-
 # Testing Application
 
 A command-line utility named `test_asia` is provided for evaluating the Algorithm using randomly generated, large sparse matrices. It supports the following options:
@@ -296,7 +272,7 @@ options:
   -b, --bruteForce      enable comparison with the exponential-time brute-force approach
   -c, --count           calculate the size of the Dominating Set
   -w, --write           write the generated random matrix to a file in the current directory
-  -v, --verbose         anable verbose output
+  -v, --verbose         enable verbose output
   -l, --log             enable file logging
   --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit

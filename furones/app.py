@@ -10,6 +10,7 @@ from . import algorithm
 from . import parser
 from . import applogger
 from . import utils
+from . import __version__
 
 def approximate_solution(inputFile, verbose=False, log=False, count=False, bruteForce=False, approximation=False, consistency=False):
     """Finds an approximate Dominating Set.
@@ -99,10 +100,10 @@ def main():
     helper.add_argument('-a', '--approximation', action='store_true', help='enable comparison with a polynomial-time approximation approach within a logarithmic factor')
     helper.add_argument('-b', '--bruteForce', action='store_true', help='enable comparison with the exponential-time brute-force approach')
     helper.add_argument('-c', '--count', action='store_true', help='calculate the size of the Dominating Set')
-    helper.add_argument('-v', '--verbose', action='store_true', help='anable verbose output')
+    helper.add_argument('-v', '--verbose', action='store_true', help='enable verbose output')
     helper.add_argument('-l', '--log', action='store_true', help='enable file logging')
     helper.add_argument('--consistency', action='store_true', help='require a linear-time certificate for the Furones 2-approximation bound')
-    helper.add_argument('--version', action='version', version='%(prog)s 0.2.8')
+    helper.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     
     # Initialize the parameters
     args = helper.parse_args()
