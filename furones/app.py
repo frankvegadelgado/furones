@@ -1,6 +1,6 @@
 #                   Approximate Minimum Dominating Set Solver
 #                          Frank Vega
-#                      June 21th, 2026
+#                      February 5th, 2025
 
 import argparse
 import time
