@@ -114,7 +114,7 @@ achieved via a mandatory two-phase reduction:
 
     Step 2a: _spanning_forest_projection(H)
       Constructs a planar spanning subgraph P of H: same vertex set, a
-      strict subset of edges.  The v0.3.0 implementation uses a linear
+      strict subset of edges.  The v0.3.1 implementation uses a linear
       DFS spanning-forest projection when the residual is non-planar,
       preserving only edges that are certainly embeddable without repeated
       planarity tests.
@@ -158,9 +158,11 @@ achieved via a mandatory two-phase reduction:
 
 Corollary for approximation:
   Because G_reduced is always planar and has minimum degree ≥ 2, Baker's
-  PTAS (1994) applies unconditionally: for any ε > 0, a
-  (1+ε)-approximation of OPT(G_reduced) is computable in polynomial time,
-  and the lift gives a (1+ε)-approximation of OPT(G).
+  PTAS (1994) applies to the reduced instance: for any ε > 0, a
+  (1+ε)-approximation of OPT(G_reduced) is computable in polynomial time.
+  The lifted set is valid for G.  A matching approximation ratio for OPT(G)
+  requires an additional transfer/certificate condition and is not claimed by
+  this reduction alone.
 
 Time complexity
 ---------------

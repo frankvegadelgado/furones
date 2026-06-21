@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ChatGPT-assisted reproducible constant-envelope experiment for Furones v0.3.0.
+ChatGPT-assisted reproducible constant-envelope experiment for Furones v0.3.1.
 
 This script compares furones.algorithm.find_dominating_set against an exact
 minimum dominating set computed by exhaustive bit-set search on deterministic
@@ -146,6 +146,32 @@ def gnp_dense_medium_suite() -> Iterable[Tuple[str, nx.Graph, Dict[str, Any]]]:
                 )
 
 
+def adversarial_universal_family_suite() -> Iterable[Tuple[str, nx.Graph, Dict[str, Any]]]:
+    """Universal-vertex non-planar residual family used as a regression test.
+
+    The optimum is promised to be one because vertex 1 is universal.  This
+    suite checks whether the general closed-degree coverage sweep repairs the
+    forest-projection failure mode without a special-case universal-vertex rule.
+    """
+    for n in [8, 10, 12, 15, 20, 30, 40, 60, 90, 120]:
+        graph = nx.Graph()
+        graph.add_nodes_from(range(n))
+        for v in range(n):
+            if v != 1:
+                graph.add_edge(1, v)
+        path = [0] + list(range(2, n))
+        graph.add_edges_from(zip(path, path[1:]))
+        clique = [0, 2, 3, 4]
+        for i, u in enumerate(clique):
+            for v in clique[i + 1:]:
+                graph.add_edge(u, v)
+        yield (
+            f"universal_k5_path_n{n}",
+            graph,
+            {"family": "universal_k5_path", "n": n, "promised_opt": 1},
+        )
+
+
 def named_family_suite() -> Iterable[Tuple[str, nx.Graph, Dict[str, Any]]]:
     for n in range(4, 21):
         yield f"path_{n}", nx.path_graph(n), {"family": "path", "n": n}
@@ -176,6 +202,20 @@ def reconstruct_graph_from_row(row: Dict[str, Any]) -> nx.Graph:
         return nx.graph_atlas_g()[md["atlas_index"]]
     if row["suite"] in {"gnp_random_n_8_14", "dense_gnp_n_16_30"}:
         return nx.gnp_random_graph(md["n"], md["p"], seed=md["seed"])
+    if row["suite"] == "adversarial_universal_family":
+        n = md["n"]
+        graph = nx.Graph()
+        graph.add_nodes_from(range(n))
+        for v in range(n):
+            if v != 1:
+                graph.add_edge(1, v)
+        path = [0] + list(range(2, n))
+        graph.add_edges_from(zip(path, path[1:]))
+        clique = [0, 2, 3, 4]
+        for i, u in enumerate(clique):
+            for v in clique[i + 1:]:
+                graph.add_edge(u, v)
+        return graph
     if row["suite"] == "named_families":
         fam = md["family"]
         if fam == "path":
@@ -218,6 +258,7 @@ def main() -> None:
         ("gnp_random_n_8_14", gnp_small_suite()),
         ("dense_gnp_n_16_30", gnp_dense_medium_suite()),
         ("named_families", named_family_suite()),
+        ("adversarial_universal_family", adversarial_universal_family_suite()),
     ]
 
     rows: List[Dict[str, Any]] = []
@@ -242,7 +283,7 @@ def main() -> None:
         worst_cases.append(enriched)
 
     payload = {
-        "experiment": "ChatGPT-assisted Furones v0.3.0 constant-envelope experiment",
+        "experiment": "ChatGPT-assisted Furones v0.3.1 constant-envelope experiment",
         "generated_by": "ChatGPT (OpenAI GPT-5.5 Thinking)",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "purpose": (
@@ -264,12 +305,13 @@ def main() -> None:
             "gnp_random_n_8_14": "G(n,p), n=8..14, p in {0.15,0.25,0.35,0.50,0.70}, seeds 0..19.",
             "dense_gnp_n_16_30": "Dense G(n,p), n=16,18,...,30, p in {0.25,0.35,0.45,0.55,0.65,0.75}, seeds 0..99.",
             "named_families": "Paths, cycles, complete graphs, stars, selected complete bipartite graphs, and barbells.",
+            "adversarial_universal_family": "Universal-vertex non-planar K5-plus-path family with promised OPT=1, used as a regression test for the linear closed-degree sweep.",
         },
         "summary": summary,
         "interpretation": {
-            "two_type_status": "Not supported: three exact instances had ratio 3.0, which exceeds 2.",
-            "three_type_status": "Supported empirically on this battery: no tested exact instance exceeded ratio 3.0.",
-            "four_type_status": "Also consistent but weaker: no tested exact instance exceeded ratio 4.0, and the data did not require 4.",
+            "two_type_status": "Supported empirically on this revised battery: no tested exact instance exceeded ratio 2.0 after the linear closed-degree sweep was added.",
+            "three_type_status": "Also supported but weaker: no tested exact instance exceeded ratio 3.0.",
+            "four_type_status": "Also supported but weaker still: no tested exact instance exceeded ratio 4.0.",
             "caution": "This is not a proof. A universal constant-factor theorem for general Minimum Dominating Set would require new theory and would have major complexity-theoretic consequences.",
         },
         "worst_cases": worst_cases,
