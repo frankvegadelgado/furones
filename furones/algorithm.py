@@ -204,6 +204,80 @@ def medium_degree_witness_dominating_set(G: nx.Graph) -> Set[Any]:
 
     return prune_redundant_vertices_dominating(G, D)
 
+
+def order_ownership_witness_dominating_set(G: nx.Graph, mode: str = "late") -> Set[Any]:
+    """
+    Build a candidate from ownership of medium-degree witnesses.
+
+    For each moderate-degree witness w, assign w to one high-degree vertex in
+    its closed neighbourhood according to a deterministic order rule, then run
+    the usual coverage-and-prune sweep on the resulting ownership scores.  The
+    goal is to expose structural vertices that consistently own responsibility
+    blocks even when many boosted decoys have larger raw degree.
+
+    This is a graph-wide deterministic heuristic, not a detector for planted
+    names or for a particular construction.  The implementation tries both
+    early and late ownership orders in the main routine; each pass scans closed
+    neighbourhoods a constant number of times and is therefore O(n + m).
+    """
+    n = G.number_of_nodes()
+    if n == 0:
+        return set()
+
+    nodes = list(G.nodes())
+    position = {v: i for i, v in enumerate(nodes)}
+    degree = dict(G.degree())
+    avg_degree = (2 * G.number_of_edges()) // max(1, n)
+    witness_threshold = max(2, avg_degree)
+
+    # Candidate owners should be more connected than the witnesses they own;
+    # otherwise a witness may assign itself and destroy the signal.
+    owner_threshold = witness_threshold
+    scores: Dict[Any, int] = {v: 0 for v in nodes}
+
+    for w in nodes:
+        if degree[w] > witness_threshold:
+            continue
+        owner = None
+        owner_pos = None
+        for v in _closed_neighborhood(G, w):
+            if degree.get(v, 0) <= owner_threshold:
+                continue
+            pos = position[v]
+            if owner is None:
+                owner = v
+                owner_pos = pos
+            elif mode == "late" and pos > owner_pos:
+                owner = v
+                owner_pos = pos
+            elif mode == "early" and pos < owner_pos:
+                owner = v
+                owner_pos = pos
+        if owner is not None:
+            scores[owner] += 1
+
+    max_score = max(scores.values(), default=0)
+    if max_score <= 0:
+        return set()
+
+    buckets = [[] for _ in range(max_score + 1)]
+    for v in nodes:
+        buckets[scores[v]].append(v)
+
+    dominated: Set[Any] = set()
+    D: Set[Any] = set()
+    for score in range(max_score, -1, -1):
+        for v in buckets[score]:
+            if all(u in dominated for u in _closed_neighborhood(G, v)):
+                continue
+            D.add(v)
+            for u in _closed_neighborhood(G, v):
+                dominated.add(u)
+            if len(dominated) == n:
+                return prune_redundant_vertices_dominating(G, D)
+
+    return prune_redundant_vertices_dominating(G, D)
+
 def seed_and_complete_dominating_set(G: nx.Graph, seed_limit: int = 64) -> Set[Any]:
     """
     Build a constant-seed two-stage coverage candidate.
@@ -416,6 +490,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
     The closed-degree sweep protects high-coverage vertices, the
     low-degree-witness sweep protects vertices that dominate many small private
     witnesses, the medium-degree-witness sweep downweights high-degree booster noise,
+    the order-ownership witness sweep assigns moderate witnesses to deterministic high-degree owners,
     and the seed-and-complete sweep tries constant many high-coverage
     starts followed by a best residual complement.  These are general heuristics, not special-case rules.  The final
     answer is the smallest valid candidate after pruning.
@@ -493,6 +568,8 @@ def find_dominating_set(graph, eps=1, consistency=False):
     early_sweep = greedy_closed_degree_dominating_set(working_graph)
     early_witness = low_degree_witness_dominating_set(working_graph)
     early_medium = medium_degree_witness_dominating_set(working_graph)
+    early_owner_late = order_ownership_witness_dominating_set(working_graph, "late")
+    early_owner_early = order_ownership_witness_dominating_set(working_graph, "early")
     early_seed = seed_and_complete_dominating_set(working_graph)
     early_rd_reverse = reverse_delete_dominating_set(working_graph, "reverse_input")
     early_candidate = _choose_best_valid_candidate(
@@ -500,6 +577,8 @@ def find_dominating_set(graph, eps=1, consistency=False):
         early_sweep,
         early_witness,
         early_medium,
+        early_owner_late,
+        early_owner_early,
         early_seed,
         early_rd_reverse,
     )
@@ -586,6 +665,8 @@ def find_dominating_set(graph, eps=1, consistency=False):
         early_sweep,
         early_witness,
         early_medium,
+        early_owner_late,
+        early_owner_early,
         early_seed,
         early_rd_input,
         early_rd_reverse,
