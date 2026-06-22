@@ -146,6 +146,64 @@ def low_degree_witness_dominating_set(G: nx.Graph) -> Set[Any]:
     return prune_redundant_vertices_dominating(G, D)
 
 
+
+def medium_degree_witness_dominating_set(G: nx.Graph) -> Set[Any]:
+    """
+    Build a dominating-set candidate from medium/low-degree witnesses.
+
+    Some dense set-cover-like graphs hide a small structural dominating set
+    behind boosted decoys.  Raw degree then overvalues decoys because they see
+    many selector/booster vertices.  This heuristic scores a vertex only by
+    the vertices of moderate degree that it can dominate.  The threshold is the
+    average degree, so very high-degree selector/booster vertices do not drive
+    the score, while element-like responsibility blocks still contribute.
+
+    This is a graph-wide rule, not a detector for planted vertices: every
+    vertex is scored by the same moderate-degree witness criterion, then a
+    standard coverage sweep and pruning pass are applied.  The implementation
+    uses bucket sorting of integer scores and runs in O(n + m).
+    """
+    n = G.number_of_nodes()
+    if n == 0:
+        return set()
+
+    avg_degree = (2 * G.number_of_edges()) // max(1, n)
+    threshold = max(2, avg_degree)
+    degree = dict(G.degree())
+    witnesses = {v for v, d in degree.items() if d <= threshold}
+
+    if not witnesses:
+        return set()
+
+    scores: Dict[Any, int] = {v: 0 for v in G.nodes()}
+    for w in witnesses:
+        scores[w] += 1
+        for v in G.neighbors(w):
+            scores[v] += 1
+
+    max_score = max(scores.values(), default=0)
+    if max_score <= 0:
+        return set()
+
+    buckets = [[] for _ in range(max_score + 1)]
+    for v in G.nodes():
+        buckets[scores[v]].append(v)
+
+    dominated: Set[Any] = set()
+    D: Set[Any] = set()
+
+    for score in range(max_score, -1, -1):
+        for v in buckets[score]:
+            if all(u in dominated for u in _closed_neighborhood(G, v)):
+                continue
+            D.add(v)
+            for u in _closed_neighborhood(G, v):
+                dominated.add(u)
+            if len(dominated) == n:
+                return prune_redundant_vertices_dominating(G, D)
+
+    return prune_redundant_vertices_dominating(G, D)
+
 def seed_and_complete_dominating_set(G: nx.Graph, seed_limit: int = 64) -> Set[Any]:
     """
     Build a constant-seed two-stage coverage candidate.
@@ -357,7 +415,8 @@ def find_dominating_set(graph, eps=1, consistency=False):
     and linear original-graph sweeps on the original working graph.
     The closed-degree sweep protects high-coverage vertices, the
     low-degree-witness sweep protects vertices that dominate many small private
-    witnesses, and the seed-and-complete sweep tries constant many high-coverage
+    witnesses, the medium-degree-witness sweep downweights high-degree booster noise,
+    and the seed-and-complete sweep tries constant many high-coverage
     starts followed by a best residual complement.  These are general heuristics, not special-case rules.  The final
     answer is the smallest valid candidate after pruning.
 
@@ -433,12 +492,14 @@ def find_dominating_set(graph, eps=1, consistency=False):
     # no planted structure is detected or hardcoded.
     early_sweep = greedy_closed_degree_dominating_set(working_graph)
     early_witness = low_degree_witness_dominating_set(working_graph)
+    early_medium = medium_degree_witness_dominating_set(working_graph)
     early_seed = seed_and_complete_dominating_set(working_graph)
     early_rd_reverse = reverse_delete_dominating_set(working_graph, "reverse_input")
     early_candidate = _choose_best_valid_candidate(
         working_graph,
         early_sweep,
         early_witness,
+        early_medium,
         early_seed,
         early_rd_reverse,
     )
@@ -524,6 +585,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
         early_candidate,
         early_sweep,
         early_witness,
+        early_medium,
         early_seed,
         early_rd_input,
         early_rd_reverse,

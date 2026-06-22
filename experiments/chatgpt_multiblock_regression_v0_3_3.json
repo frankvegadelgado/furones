@@ -1,0 +1,124 @@
+{
+  "metadata": {
+    "solver_version": "0.3.3",
+    "experiment": "targeted multiblock planted-dominator regression",
+    "long_exhaustive_battery_rerun": false
+  },
+  "summary": {
+    "instances": 6,
+    "all_valid": true,
+    "max_certified_ratio": 1.0
+  },
+  "cases": [
+    {
+      "name": "old_two_block_boosted_q160_b4800_p0.35_beta2000",
+      "n": 11762,
+      "m": 882357,
+      "known_ds_size": 2,
+      "output_size": 2,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    },
+    {
+      "name": "multiblock_k8_q200_b200_p0.1_beta30",
+      "n": 2048,
+      "m": 103427,
+      "known_ds_size": 8,
+      "output_size": 8,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7"
+      ]
+    },
+    {
+      "name": "multiblock_k8_q200_b200_p0.05_beta30",
+      "n": 2048,
+      "m": 87388,
+      "known_ds_size": 8,
+      "output_size": 8,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7"
+      ]
+    },
+    {
+      "name": "multiblock_k8_q200_b200_p0.04_beta30",
+      "n": 2048,
+      "m": 84092,
+      "known_ds_size": 8,
+      "output_size": 8,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7"
+      ]
+    },
+    {
+      "name": "multiblock_k8_q240_b200_p0.04_beta30",
+      "n": 2088,
+      "m": 105397,
+      "known_ds_size": 8,
+      "output_size": 8,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7"
+      ]
+    },
+    {
+      "name": "multiblock_k10_q200_b200_p0.08_beta30",
+      "n": 2510,
+      "m": 116527,
+      "known_ds_size": 10,
+      "output_size": 10,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ]
+    }
+  ]
+}
