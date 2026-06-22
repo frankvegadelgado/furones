@@ -578,6 +578,54 @@ def _weighted_planar_bipartite_baker_dominating_set(
 
     return min(candidates, key=lambda D: (sum(weights.get(v, 1.0) for v in D), len(D)))
 
+def weighted_closed_degree_bucket_order(B, allowed, weights, bucket_count=128):
+    """Linear-time deterministic bucket order.
+
+    Vertices are ordered approximately by the score
+
+        (closed degree) / weight = (deg_B(v) + 1) / weight(v).
+
+    The number of buckets is fixed, so the runtime is O(|allowed| + |E(B)|)
+    up to a constant depending on bucket_count.  Ties are resolved by the
+    existing NetworkX node iteration order, not by sorting string labels.
+    """
+    allowed = list(allowed)
+    if not allowed:
+        return []
+
+    scores = []
+    min_score = float("inf")
+    max_score = float("-inf")
+
+    for v in allowed:
+        w = max(weights.get(v, 1.0), 1e-12)
+        score = (B.degree(v) + 1) / w
+        scores.append((v, score))
+        if score < min_score:
+            min_score = score
+        if score > max_score:
+            max_score = score
+
+    if max_score == min_score:
+        return allowed
+
+    buckets = [[] for _ in range(bucket_count)]
+
+    scale = (bucket_count - 1) / (max_score - min_score)
+
+    for v, score in scores:
+        idx = int((score - min_score) * scale)
+        if idx < 0:
+            idx = 0
+        elif idx >= bucket_count:
+            idx = bucket_count - 1
+        buckets[idx].append(v)
+
+    order = []
+    for idx in range(bucket_count - 1, -1, -1):
+        order.extend(buckets[idx])
+
+    return order
 
 def _weighted_single_pass_dominate(
     B: nx.Graph,
@@ -590,12 +638,11 @@ def _weighted_single_pass_dominate(
 
     # Sort is used for deterministic behaviour.  The key is the weighted
     # closed-degree score: high coverage and low weight are preferred.
-    order = sorted(
+    order = weighted_closed_degree_bucket_order(
+        B,
         allowed,
-        key=lambda v: (
-            -((B.degree(v) + 1) / max(weights.get(v, 1.0), 1e-12)),
-            str(v),
-        ),
+        weights,
+        bucket_count=128,
     )
     dominated: Set[Any] = set()
     D: Set[Any] = set()
