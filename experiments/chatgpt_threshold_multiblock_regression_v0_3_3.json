@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "solver_version": "0.3.3",
+    "solver_version": "0.3.4",
     "experiment": "targeted larger-k near-threshold multiblock regression",
     "long_exhaustive_battery_rerun": false,
     "notes": [

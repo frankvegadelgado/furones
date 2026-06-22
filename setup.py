@@ -2,7 +2,7 @@ from pathlib import Path
 
 import setuptools
 
-VERSION = "0.3.3"
+VERSION = "0.3.4"
 
 NAME = "furones"
 

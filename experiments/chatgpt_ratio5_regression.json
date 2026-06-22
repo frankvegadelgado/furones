@@ -1,7 +1,7 @@
 {
   "metadata": {
     "experiment": "ChatGPT-assisted targeted random set-cover ratio-5 regression",
-    "solver_version": "0.3.3",
+    "solver_version": "0.3.4",
     "long_exhaustive_battery_rerun": false,
     "notes": [
       "This is a targeted regression only, not a universal approximation proof.",

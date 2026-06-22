@@ -293,7 +293,7 @@ def seed_and_complete_dominating_set(G: nx.Graph, seed_limit: int = 64) -> Set[A
 
     The routine is not a detector for planted pairs.  It uses only closed
     neighbourhood coverage, a fixed constant number of seeds, and a fixed
-    constant number of residual-complement passes per seed.  In v0.3.3 the
+    constant number of residual-complement passes per seed.  In v0.3.4 the
     default seed window is 64, still a fixed constant, so it remains O(n + m)
     up to constant factors.
     """
@@ -739,7 +739,7 @@ def is_two_approximation_certified(
 
 def find_dominating_set(graph, eps=1, consistency=False):
     """
-    Compute a Furones v0.3.3 dominating set of an undirected graph.
+    Compute a Furones v0.3.4 dominating set of an undirected graph.
 
     The algorithm combines structural reductions with Baker's PTAS for planar graphs
     and linear original-graph sweeps on the original working graph.

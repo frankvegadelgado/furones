@@ -1,4 +1,4 @@
-"""Small sanity checks for the Salvador-style auxiliary candidate in Furones v0.3.3."""
+"""Small sanity checks for the Salvador-style auxiliary candidate in Furones v0.3.4."""
 import json
 import networkx as nx
 from furones.algorithm import find_dominating_set, salvador_planar_bipartite_baker_candidate
@@ -23,7 +23,7 @@ cases = [
     row("cycle_12", nx.cycle_graph(12)),
     row("complete_bipartite_4_5", nx.complete_bipartite_graph(4, 5)),
 ]
-result = {"version": "0.3.3", "long_exhaustive_battery_rerun": False, "cases": cases}
+result = {"version": "0.3.4", "long_exhaustive_battery_rerun": False, "cases": cases}
 print(json.dumps(result, indent=2))
 with open("experiments/chatgpt_salvador_auxiliary_regression_v0_3_3.json", "w", encoding="utf-8") as fh:
     json.dump(result, fh, indent=2)

@@ -1,5 +1,5 @@
 """
-ChatGPT-assisted targeted random set-cover regression for Furones v0.3.3.
+ChatGPT-assisted targeted random set-cover regression for Furones v0.3.4.
 
 This script checks the reported random planted-pair set-cover stress tests that
 previously reached ratios 4.0--5.0. It is intentionally targeted and fast, not
@@ -91,7 +91,7 @@ def main() -> None:
     result = {
         "metadata": {
             "experiment": "ChatGPT-assisted targeted random set-cover ratio-5 regression",
-            "solver_version": "0.3.3",
+            "solver_version": "0.3.4",
             "long_exhaustive_battery_rerun": False,
             "notes": [
                 "This is a targeted regression only, not a universal approximation proof.",

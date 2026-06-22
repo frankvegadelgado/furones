@@ -1,4 +1,4 @@
-# Furones v0.3.3 targeted regressions
+# Furones v0.3.4 targeted regressions
 
 This folder contains focused ChatGPT-assisted adversarial regressions. They are not exhaustive benchmarks and they are not proofs of a universal approximation ratio.
 
@@ -14,4 +14,4 @@ Checks the random and boosted set-cover-style family that previously reached rat
 
 ## Expected result
 
-For the listed targeted rows, Furones v0.3.3 should return `{p0,p1}` with ratio 1.0. This only shows that the reported regressions are repaired by the current general heuristics.
+For the listed targeted rows, Furones v0.3.4 should return `{p0,p1}` with ratio 1.0. This only shows that the reported regressions are repaired by the current general heuristics.

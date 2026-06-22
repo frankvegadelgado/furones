@@ -80,7 +80,7 @@ def main():
     cases=[run_case(*p) for p in params]
     res={
         "metadata":{
-            "solver_version":"0.3.3",
+            "solver_version":"0.3.4",
             "experiment":"targeted larger-k near-threshold multiblock regression",
             "long_exhaustive_battery_rerun": False,
             "notes":[

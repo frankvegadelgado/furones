@@ -1,4 +1,4 @@
-"""Targeted v0.3.3 regression for random/boosted set-cover adversaries."""
+"""Targeted v0.3.4 regression for random/boosted set-cover adversaries."""
 from __future__ import annotations
 
 import json, random
@@ -60,7 +60,7 @@ def main():
         G=random_set_cover_graph(**kw)
         out.append(row(name,G,2))
         print(out[-1])
-    result={"metadata":{"solver_version":"0.3.3","experiment":"targeted random and boosted set-cover regression","long_exhaustive_battery_rerun":False},"summary":{"instances":len(out),"all_valid":all(r['valid'] for r in out),"max_ratio":max(r['ratio'] for r in out)},"cases":out}
+    result={"metadata":{"solver_version":"0.3.4","experiment":"targeted random and boosted set-cover regression","long_exhaustive_battery_rerun":False},"summary":{"instances":len(out),"all_valid":all(r['valid'] for r in out),"max_ratio":max(r['ratio'] for r in out)},"cases":out}
     Path(__file__).with_name("chatgpt_ratio75_regression.json").write_text(json.dumps(result,indent=2)+"\n")
     print(json.dumps(result,indent=2))
 

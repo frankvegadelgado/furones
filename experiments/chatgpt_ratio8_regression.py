@@ -1,5 +1,5 @@
 """
-ChatGPT-assisted targeted adversarial regression for Furones v0.3.3.
+ChatGPT-assisted targeted adversarial regression for Furones v0.3.4.
 
 This short script checks the deterministic planted-pair/decoy-booster family
 that previously reached ratios above 4.  It is a targeted regression only, not
@@ -95,12 +95,12 @@ def main() -> None:
     result = {
         "metadata": {
             "experiment": "ChatGPT-assisted targeted ratio-above-4 regression",
-            "solver_version": "0.3.3",
+            "solver_version": "0.3.4",
             "long_exhaustive_battery_rerun": False,
             "notes": [
                 "This is a targeted regression only, not a universal approximation proof.",
                 "For the deterministic planted-pair decoy-booster rows, OPT=2 by construction: {p0,p1} dominates, and no single vertex is universal.",
-                "The v0.3.3 seed-and-complete candidate is a general constant-seed residual-coverage heuristic, not a detector for this family."
+                "The v0.3.4 seed-and-complete candidate is a general constant-seed residual-coverage heuristic, not a detector for this family."
             ],
         },
         "summary": {
