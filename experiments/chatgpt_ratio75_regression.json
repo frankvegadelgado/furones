@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "solver_version": "0.3.3",
+    "experiment": "targeted random and boosted set-cover regression",
+    "long_exhaustive_battery_rerun": false
+  },
+  "summary": {
+    "instances": 6,
+    "all_valid": true,
+    "max_ratio": 1.0
+  },
+  "cases": [
+    {
+      "name": "random_q80_b2400_p0.5_s0",
+      "n": 4882,
+      "m": 200380,
+      "opt": 2,
+      "output_size": 2,
+      "ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    },
+    {
+      "name": "random_q120_b2400_p0.5_s0",
+      "n": 4922,
+      "m": 300313,
+      "opt": 2,
+      "output_size": 2,
+      "ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    },
+    {
+      "name": "random_q160_b2400_p0.5_s0",
+      "n": 4962,
+      "m": 401799,
+      "opt": 2,
+      "output_size": 2,
+      "ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    },
+    {
+      "name": "random_q200_b2400_p0.5_s0",
+      "n": 5002,
+      "m": 505322,
+      "opt": 2,
+      "output_size": 2,
+      "ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    },
+    {
+      "name": "boosted_q160_b2400_p0.35_beta1000_s0",
+      "n": 6962,
+      "m": 608731,
+      "opt": 2,
+      "output_size": 2,
+      "ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    },
+    {
+      "name": "boosted_q160_b4800_p0.35_beta2000_s0",
+      "n": 13762,
+      "m": 1204357,
+      "opt": 2,
+      "output_size": 2,
+      "ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    }
+  ]
+}

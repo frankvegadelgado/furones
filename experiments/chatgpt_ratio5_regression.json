@@ -1,0 +1,128 @@
+{
+  "metadata": {
+    "experiment": "ChatGPT-assisted targeted random set-cover ratio-5 regression",
+    "solver_version": "0.3.3",
+    "long_exhaustive_battery_rerun": false,
+    "notes": [
+      "This is a targeted regression only, not a universal approximation proof.",
+      "For each row OPT=2 by construction: {p0,p1} dominates, and no single vertex is universal.",
+      "The repair increases the constant seed window in the general seed-and-complete heuristic from 32 to 64."
+    ]
+  },
+  "summary": {
+    "instances": 6,
+    "all_valid": true,
+    "max_ratio": 1.0,
+    "reported_ratio_5_repaired": true
+  },
+  "cases": [
+    {
+      "name": "random_set_cover_q40_b800_p0.52_seed0",
+      "family": "random_set_cover_planted_pair",
+      "q": 40,
+      "b": 800,
+      "p": 0.52,
+      "seed": 0,
+      "n": 1642,
+      "m": 35851,
+      "exact_opt": 2,
+      "output_size": 2,
+      "ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    },
+    {
+      "name": "random_set_cover_q40_b1600_p0.52_seed0",
+      "family": "random_set_cover_planted_pair",
+      "q": 40,
+      "b": 1600,
+      "p": 0.52,
+      "seed": 0,
+      "n": 3242,
+      "m": 70708,
+      "exact_opt": 2,
+      "output_size": 2,
+      "ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    },
+    {
+      "name": "random_set_cover_q60_b1600_p0.5_seed0",
+      "family": "random_set_cover_planted_pair",
+      "q": 60,
+      "b": 1600,
+      "p": 0.5,
+      "seed": 0,
+      "n": 3262,
+      "m": 101296,
+      "exact_opt": 2,
+      "output_size": 2,
+      "ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    },
+    {
+      "name": "random_set_cover_q80_b1600_p0.5_seed0",
+      "family": "random_set_cover_planted_pair",
+      "q": 80,
+      "b": 1600,
+      "p": 0.5,
+      "seed": 0,
+      "n": 3282,
+      "m": 134724,
+      "exact_opt": 2,
+      "output_size": 2,
+      "ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    },
+    {
+      "name": "random_set_cover_q80_b2400_p0.5_seed0",
+      "family": "random_set_cover_planted_pair",
+      "q": 80,
+      "b": 2400,
+      "p": 0.5,
+      "seed": 0,
+      "n": 4882,
+      "m": 200380,
+      "exact_opt": 2,
+      "output_size": 2,
+      "ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    },
+    {
+      "name": "random_set_cover_q80_b2400_p0.5_seed2",
+      "family": "random_set_cover_planted_pair",
+      "q": 80,
+      "b": 2400,
+      "p": 0.5,
+      "seed": 2,
+      "n": 4882,
+      "m": 200108,
+      "exact_opt": 2,
+      "output_size": 2,
+      "ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1"
+      ]
+    }
+  ]
+}

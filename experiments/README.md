@@ -1,13 +1,17 @@
-# Furones v0.3.3 targeted ratio-above-4 regression
+# Furones v0.3.3 targeted regressions
 
-This folder contains a short ChatGPT-assisted targeted regression for the deterministic planted-pair decoy-booster family that previously drove the v0.3.2 implementation above ratio 4.
+This folder contains focused ChatGPT-assisted adversarial regressions. They are not exhaustive benchmarks and they are not proofs of a universal approximation ratio.
 
-The experiment is deliberately small and fast.  It is not an exhaustive benchmark and not a proof of a universal approximation ratio.
+## Included regressions
 
-Run from the repository root:
+### `chatgpt_ratio8_regression.py`
 
-```bash
-python experiments/chatgpt_ratio8_regression.py
-```
+Checks the deterministic planted-pair decoy-booster family that previously forced the solver to select many decoys. The exact optimum is 2 by construction because `{p0,p1}` dominates the graph and no single vertex is universal.
 
-Expected result: the adversarial rows q=8,9,10,12,16 all return the planted pair `{p0,p1}`, giving ratio 1 against the exact optimum 2.
+### `chatgpt_ratio75_regression.py`
+
+Checks the random and boosted set-cover-style family that previously reached ratio 7.5. The generator uses two planted vertices, random decoy-element incidence, and optional booster blocks that raise decoy degrees while preserving `{p0,p1}` as an exact optimum of size 2.
+
+## Expected result
+
+For the listed targeted rows, Furones v0.3.3 should return `{p0,p1}` with ratio 1.0. This only shows that the reported regressions are repaired by the current general heuristics.
