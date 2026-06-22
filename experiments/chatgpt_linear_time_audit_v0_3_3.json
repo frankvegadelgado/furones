@@ -1,0 +1,6 @@
+{
+  "sorted_calls_in_algorithm_py": 0,
+  "old_fullscan_repair_loop_present": false,
+  "bucket_order_present": true,
+  "choose_best_uses_sorted_map": false
+}

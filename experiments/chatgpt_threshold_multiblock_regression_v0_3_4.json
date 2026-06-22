@@ -1,0 +1,292 @@
+{
+  "metadata": {
+    "solver_version": "0.3.4",
+    "experiment": "targeted larger-k near-threshold multiblock regression",
+    "long_exhaustive_battery_rerun": false,
+    "notes": [
+      "This is a targeted regression, not a universal approximation proof.",
+      "The planted set P has size k and is a valid dominating set in every row, so |D_alg|/k is a certified ratio upper-bound comparison against a known feasible solution."
+    ]
+  },
+  "summary": {
+    "instances": 8,
+    "all_valid": true,
+    "all_planted_sets_valid": true,
+    "max_certified_ratio": 1.0,
+    "reported_ratio_4_35_repaired": true
+  },
+  "cases": [
+    {
+      "name": "threshold_multiblock_k8_q200_b200_p0.1_beta30_seed0",
+      "parameters": {
+        "k": 8,
+        "q": 200,
+        "b": 200,
+        "p": 0.1,
+        "beta": 30,
+        "seed": 0
+      },
+      "n": 1838,
+      "m": 61217,
+      "known_ds_size": 8,
+      "planted_set_valid": true,
+      "output_size": 8,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7"
+      ]
+    },
+    {
+      "name": "threshold_multiblock_k8_q200_b200_p0.05_beta30_seed0",
+      "parameters": {
+        "k": 8,
+        "q": 200,
+        "b": 200,
+        "p": 0.05,
+        "beta": 30,
+        "seed": 0
+      },
+      "n": 1838,
+      "m": 45178,
+      "known_ds_size": 8,
+      "planted_set_valid": true,
+      "output_size": 8,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7"
+      ]
+    },
+    {
+      "name": "threshold_multiblock_k8_q240_b200_p0.04_beta30_seed0",
+      "parameters": {
+        "k": 8,
+        "q": 240,
+        "b": 200,
+        "p": 0.04,
+        "beta": 30,
+        "seed": 0
+      },
+      "n": 1878,
+      "m": 54787,
+      "known_ds_size": 8,
+      "planted_set_valid": true,
+      "output_size": 8,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7"
+      ]
+    },
+    {
+      "name": "threshold_multiblock_k12_q180_b100_p0.09_beta20_seed2",
+      "parameters": {
+        "k": 12,
+        "q": 180,
+        "b": 100,
+        "p": 0.09,
+        "beta": 20,
+        "seed": 2
+      },
+      "n": 1412,
+      "m": 42372,
+      "known_ds_size": 12,
+      "planted_set_valid": true,
+      "output_size": 12,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p10",
+        "p11",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ]
+    },
+    {
+      "name": "threshold_multiblock_k16_q240_b100_p0.07_beta20_seed2",
+      "parameters": {
+        "k": 16,
+        "q": 240,
+        "b": 100,
+        "p": 0.07,
+        "beta": 20,
+        "seed": 2
+      },
+      "n": 1876,
+      "m": 65775,
+      "known_ds_size": 16,
+      "planted_set_valid": true,
+      "output_size": 16,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p14",
+        "p15",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ]
+    },
+    {
+      "name": "threshold_multiblock_k20_q300_b100_p0.055_beta20_seed2",
+      "parameters": {
+        "k": 20,
+        "q": 300,
+        "b": 100,
+        "p": 0.055,
+        "beta": 20,
+        "seed": 2
+      },
+      "n": 2340,
+      "m": 91869,
+      "known_ds_size": 20,
+      "planted_set_valid": true,
+      "output_size": 20,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p14",
+        "p15",
+        "p16",
+        "p17",
+        "p18",
+        "p19",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ]
+    },
+    {
+      "name": "threshold_multiblock_k20_q300_b200_p0.051_beta20_seed4",
+      "parameters": {
+        "k": 20,
+        "q": 300,
+        "b": 200,
+        "p": 0.051,
+        "beta": 20,
+        "seed": 4
+      },
+      "n": 4340,
+      "m": 122384,
+      "known_ds_size": 20,
+      "planted_set_valid": true,
+      "output_size": 20,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p14",
+        "p15",
+        "p16",
+        "p17",
+        "p18",
+        "p19",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ]
+    },
+    {
+      "name": "threshold_multiblock_k20_q300_b250_p0.051_beta20_seed4",
+      "parameters": {
+        "k": 20,
+        "q": 300,
+        "b": 250,
+        "p": 0.051,
+        "beta": 20,
+        "seed": 4
+      },
+      "n": 5340,
+      "m": 138879,
+      "known_ds_size": 20,
+      "planted_set_valid": true,
+      "output_size": 20,
+      "certified_ratio": 1.0,
+      "valid": true,
+      "output": [
+        "p0",
+        "p1",
+        "p10",
+        "p11",
+        "p12",
+        "p13",
+        "p14",
+        "p15",
+        "p16",
+        "p17",
+        "p18",
+        "p19",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p6",
+        "p7",
+        "p8",
+        "p9"
+      ]
+    }
+  ]
+}

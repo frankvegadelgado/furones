@@ -62,7 +62,7 @@ def main():
     for k,q,b,p,beta in [(8,200,200,0.10,30),(8,200,200,0.05,30),(8,200,200,0.04,30),(8,240,200,0.04,30),(10,200,200,0.08,30)]:
         cases.append(row(f'multiblock_k{k}_q{q}_b{b}_p{p}_beta{beta}', multiblock_adversary(k,q,b,p,beta), k))
     res={"metadata":{"solver_version":"0.3.4","experiment":"targeted multiblock planted-dominator regression","long_exhaustive_battery_rerun":False},"summary":{"instances":len(cases),"all_valid":all(c['valid'] for c in cases),"max_certified_ratio":max(c['certified_ratio'] for c in cases)},"cases":cases}
-    out=Path(__file__).with_name('chatgpt_multiblock_regression_v0_3_3.json')
+    out=Path(__file__).with_name('chatgpt_multiblock_regression_v0_3_4.json')
     out.write_text(json.dumps(res,indent=2)+"\n")
     print(json.dumps(res,indent=2))
 if __name__=='__main__': main()
