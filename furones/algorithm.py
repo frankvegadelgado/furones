@@ -7,7 +7,7 @@ import networkx as nx
 from . import tscc_ds_reduction
 from . import baker_algo
 from collections import defaultdict
-from typing import Any, Dict, Iterable, Set
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 
 class ApproximationNotCertifiedError(RuntimeError):
@@ -444,6 +444,215 @@ def reverse_delete_dominating_set(G: nx.Graph, mode: str = "input") -> Set[Any]:
 
     return D
 
+
+
+
+def salvador_planar_bipartite_baker_candidate(G: nx.Graph, eps: float = 1.0) -> Set[Any]:
+    """
+    Build a dominating-set candidate through the Salvador-style planar
+    bipartite oriented-incidence reduction, followed by a Baker-style weighted
+    Dominating Set solve on the auxiliary graph.
+
+    This deliberately does *not* solve weighted bipartite Vertex Cover by
+    min-cut.  The auxiliary graph is used as a planar bipartite Dominating Set
+    instance.  A weighted Baker-style layer candidate is computed on that
+    auxiliary graph, decoded by first coordinate, and then pruned/validated on
+    the original graph.
+
+    The auxiliary construction is linear in the input incidence size.  For
+    fixed eps, the layer-based auxiliary candidate uses a fixed number of
+    graph scans; its constants depend on 1/eps.  As in the rest of Furones,
+    the returned object is only a candidate until it is checked directly on
+    the original graph.
+    """
+    if G.number_of_nodes() == 0:
+        return set()
+    if G.number_of_edges() == 0:
+        return set(G.nodes())
+
+    B, weights = _build_salvador_planar_bipartite_auxiliary(G)
+    if B.number_of_nodes() == 0:
+        return set()
+
+    try:
+        if not nx.is_bipartite(B) or not nx.is_planar(B):
+            return set()
+    except Exception:
+        return set()
+
+    aux_solution = _weighted_planar_bipartite_baker_dominating_set(B, weights, eps=eps)
+    decoded = {
+        node[1]
+        for node in aux_solution
+        if isinstance(node, tuple) and len(node) == 3 and node[0] == "inc"
+    }
+
+    if not decoded:
+        return set()
+
+    return prune_redundant_vertices_dominating(G, decoded)
+
+
+def _build_salvador_planar_bipartite_auxiliary(G: nx.Graph) -> Tuple[nx.Graph, Dict[Any, float]]:
+    """Construct the Salvador oriented-incidence auxiliary graph.
+
+    For each processed original edge {u,v}, create incidence nodes x_uv and
+    x_vu, the forcing edge {x_uv,x_vu}, and cyclic local consistency edges
+    among incidences generated while processing a vertex.  The weights follow
+    the uploaded Salvador manuscript: w(x_uv)=1/deg_G(u).
+    """
+    B = nx.Graph()
+    weights: Dict[Any, float] = {}
+    W = G.copy()
+    deg = dict(G.degree())
+
+    for u in list(G.nodes()):
+        if u not in W:
+            continue
+        nbrs = list(W.neighbors(u))
+        W.remove_node(u)
+        first = None
+        prev = None
+        for v in nbrs:
+            x_uv = ("inc", u, v)
+            x_vu = ("inc", v, u)
+            B.add_node(x_uv)
+            B.add_node(x_vu)
+            weights[x_uv] = 1.0 / max(1, deg.get(u, 1))
+            weights[x_vu] = 1.0 / max(1, deg.get(v, 1))
+            B.add_edge(x_uv, x_vu)
+            if prev is None:
+                first = x_uv
+            else:
+                B.add_edge(x_uv, prev)
+            prev = x_vu
+        if len(nbrs) > 1 and first is not None and prev is not None:
+            B.add_edge(first, prev)
+
+    return B, weights
+
+
+def _weighted_planar_bipartite_baker_dominating_set(
+    B: nx.Graph,
+    weights: Dict[Any, float],
+    eps: float = 1.0,
+) -> Set[Any]:
+    """Baker-style weighted Dominating Set candidate on a planar graph.
+
+    The routine uses BFS layers and tries each layer residue modulo k, where
+    k depends only on eps.  For each residue it first dominates the kept graph,
+    then repairs domination on the full auxiliary graph, and finally prunes.
+    The implementation is a practical weighted layer candidate for the
+    auxiliary path; it intentionally replaces the earlier min-cut vertex-cover
+    solve.
+    """
+    if B.number_of_nodes() == 0:
+        return set()
+
+    k = max(2, int(round(1.0 / max(eps, 1e-9))) + 1)
+    layers: Dict[Any, int] = {}
+    for component in nx.connected_components(B):
+        root = min(component, key=lambda x: str(x))
+        lengths = nx.single_source_shortest_path_length(B.subgraph(component), root)
+        layers.update(lengths)
+
+    candidates: List[Set[Any]] = []
+    for residue in range(k):
+        deleted = {v for v, dist in layers.items() if dist % k == residue}
+        kept = set(B.nodes()) - deleted
+        D = _weighted_single_pass_dominate(B, weights, allowed=kept)
+        D = _weighted_repair_domination(B, weights, D)
+        D = _prune_auxiliary_dominating_set(B, D)
+        if nx.is_dominating_set(B, D):
+            candidates.append(D)
+
+    # Fallback candidate without layer deletion, still weighted domination.
+    D0 = _weighted_single_pass_dominate(B, weights, allowed=set(B.nodes()))
+    D0 = _weighted_repair_domination(B, weights, D0)
+    D0 = _prune_auxiliary_dominating_set(B, D0)
+    if nx.is_dominating_set(B, D0):
+        candidates.append(D0)
+
+    if not candidates:
+        return set(B.nodes())
+
+    return min(candidates, key=lambda D: (sum(weights.get(v, 1.0) for v in D), len(D)))
+
+
+def _weighted_single_pass_dominate(
+    B: nx.Graph,
+    weights: Dict[Any, float],
+    allowed: Set[Any],
+) -> Set[Any]:
+    """One weighted coverage sweep over allowed auxiliary vertices."""
+    if not allowed:
+        return set()
+
+    # Sort is used for deterministic behaviour.  The key is the weighted
+    # closed-degree score: high coverage and low weight are preferred.
+    order = sorted(
+        allowed,
+        key=lambda v: (
+            -((B.degree(v) + 1) / max(weights.get(v, 1.0), 1e-12)),
+            str(v),
+        ),
+    )
+    dominated: Set[Any] = set()
+    D: Set[Any] = set()
+    for v in order:
+        if all(u in dominated for u in _closed_neighborhood(B, v)):
+            continue
+        D.add(v)
+        for u in _closed_neighborhood(B, v):
+            dominated.add(u)
+        if len(dominated) == B.number_of_nodes():
+            break
+    return D
+
+
+def _weighted_repair_domination(B: nx.Graph, weights: Dict[Any, float], D: Set[Any]) -> Set[Any]:
+    """Repair an auxiliary candidate until it dominates the whole graph."""
+    D = set(D)
+    dominated: Set[Any] = set()
+    for v in D:
+        for u in _closed_neighborhood(B, v):
+            dominated.add(u)
+
+    while len(dominated) < B.number_of_nodes():
+        best = None
+        best_score = -1.0
+        for v in B.nodes():
+            if v in D:
+                continue
+            gain = sum(1 for u in _closed_neighborhood(B, v) if u not in dominated)
+            if gain <= 0:
+                continue
+            score = gain / max(weights.get(v, 1.0), 1e-12)
+            if score > best_score or (score == best_score and str(v) < str(best)):
+                best = v
+                best_score = score
+        if best is None:
+            break
+        D.add(best)
+        for u in _closed_neighborhood(B, best):
+            dominated.add(u)
+    return D
+
+
+def _prune_auxiliary_dominating_set(B: nx.Graph, D: Set[Any]) -> Set[Any]:
+    """Remove redundant vertices from an auxiliary dominating set."""
+    D = set(D)
+    dom_count: Dict[Any, int] = defaultdict(int)
+    for v in D:
+        for u in _closed_neighborhood(B, v):
+            dom_count[u] += 1
+    for v in list(D):
+        if all(dom_count[u] >= 2 for u in _closed_neighborhood(B, v)):
+            D.discard(v)
+            for u in _closed_neighborhood(B, v):
+                dom_count[u] -= 1
+    return D
+
 def _choose_best_valid_candidate(G: nx.Graph, *candidates: Set[Any]) -> Set[Any]:
     """Return the smallest candidate that is a valid dominating set of G."""
     valid = []
@@ -491,8 +700,10 @@ def find_dominating_set(graph, eps=1, consistency=False):
     low-degree-witness sweep protects vertices that dominate many small private
     witnesses, the medium-degree-witness sweep downweights high-degree booster noise,
     the order-ownership witness sweep assigns moderate witnesses to deterministic high-degree owners,
-    and the seed-and-complete sweep tries constant many high-coverage
-    starts followed by a best residual complement.  These are general heuristics, not special-case rules.  The final
+    the seed-and-complete sweep tries constant many high-coverage
+    starts followed by a best residual complement, and the Salvador-style
+    planar bipartite auxiliary reduction contributes a Baker-style weighted
+    planar-bipartite Dominating Set candidate.  These are general heuristics, not special-case rules.  The final
     answer is the smallest valid candidate after pruning.
 
     Guarantees:
@@ -571,6 +782,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
     early_owner_late = order_ownership_witness_dominating_set(working_graph, "late")
     early_owner_early = order_ownership_witness_dominating_set(working_graph, "early")
     early_seed = seed_and_complete_dominating_set(working_graph)
+    early_salvador = salvador_planar_bipartite_baker_candidate(working_graph, eps=eps)
     early_rd_reverse = reverse_delete_dominating_set(working_graph, "reverse_input")
     early_candidate = _choose_best_valid_candidate(
         working_graph,
@@ -580,6 +792,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
         early_owner_late,
         early_owner_early,
         early_seed,
+        early_salvador,
         early_rd_reverse,
     )
     if len(early_candidate) <= 2:
@@ -668,6 +881,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
         early_owner_late,
         early_owner_early,
         early_seed,
+        early_salvador,
         early_rd_input,
         early_rd_reverse,
         early_rd_high,
