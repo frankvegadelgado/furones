@@ -1,0 +1,8 @@
+family,instances,n_min,n_max,m_min,m_max,optimum_min,optimum_max,final_valid_percent,final_optimal_percent,mean_final_ratio_to_optimum,median_final_ratio_to_optimum,max_final_ratio_to_optimum
+erdos_renyi_dense,150,6,14,4,59,1,4,100.0,100.0,1.0,1.0,1.0
+erdos_renyi_medium,200,6,14,1,38,2,5,100.0,100.0,1.0,1.0,1.0
+erdos_renyi_sparse,200,6,14,0,17,2,10,100.0,100.0,1.0,1.0,1.0
+perturbed_path_cycle,100,6,14,5,16,2,5,100.0,100.0,1.0,1.0,1.0
+random_bipartite,150,6,14,1,27,2,9,100.0,100.0,1.0,1.0,1.0
+random_tree,100,6,14,5,13,2,6,100.0,100.0,1.0,1.0,1.0
+small_structured,100,6,14,7,30,1,4,100.0,100.0,1.0,1.0,1.0

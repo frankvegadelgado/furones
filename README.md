@@ -106,7 +106,7 @@ where the fields W and V specify the endpoints of the edge while the lower-case 
 
 _Example Solution:_
 
-Dominating Set Found `2, 3`: Nodes `2` and `3` constitute an optimal solution.
+Dominating Set Found `1, 2`: Nodes `1` and `2` constitute an optimal solution.
 
 ---
 
@@ -142,10 +142,10 @@ pip install furones
    **Example Output:**
 
    ```
-   testMatrix1: Dominating Set Found 2, 3
+   testMatrix1: Dominating Set Found 1, 2
    ```
 
-   This indicates nodes `2, 3` form a Dominating Set.
+   This indicates nodes `1, 2` form a Dominating Set.
 
 ---
 
@@ -160,7 +160,7 @@ asia -i ./benchmarks/testMatrix2 -c
 **Output:**
 
 ```
-testMatrix2: Dominating Set Size 2
+testMatrix2: Dominating Set Size 4
 ```
 
 ---
@@ -227,29 +227,6 @@ options:
 
 ---
 
-## NPBench Experiments
-
-The NPBench benchmark instances are not uploaded to this repository. Anyone can download the DIMACS clique-complement instances from:
-
-<https://github.com/dynaroars/npbench/tree/master/instances/vertex_cover/clique_complement>
-
-ThanhVu Nguyen and Thang Bui, **NP-Complete Benchmark Instances**, <https://roars.dev/npbench/>. The folder uses the vertex-cover DIMACS clique complements as hard dominating-set instances.
-
-Run the certified batch experiment with:
-
-```bash
-python -m furones.batch -i ./experiments/ -c -l --consistency
-```
-
-or equivalently:
-
-```bash
-batch_asia -i ./experiments/ -c -l --consistency
-```
-
-The `--consistency` flag requires Furones to return only when its linear-time sufficient consistency check certifies the 2-approximation bound. The logged NPBench run used in the paper is stored as `experiments/np_bench.txt`.
-
----
 
 # Testing Application
 

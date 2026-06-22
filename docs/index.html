@@ -180,7 +180,7 @@ e 3 5
 </code></pre>
 <p>where the fields W and V specify the endpoints of the edge while the lower-case character <code>e</code> signifies that this is an edge descriptor line.</p>
 <p><em>Example Solution:</em></p>
-<p>Dominating Set Found <code>2, 3</code>: Nodes <code>2</code> and <code>3</code> constitute an optimal solution.</p>
+<p>Dominating Set Found <code>1, 2</code>: Nodes <code>1</code> and <code>2</code> constitute an optimal solution.</p>
 <hr>
 <h1>Compile and Environment</h1>
 <h2>Prerequisites</h2>
@@ -204,9 +204,9 @@ cd furones
 </code></pre>
 <p>utilizing the <code>asia</code> command provided by Furones's Library to execute the Boolean adjacency matrix <code>furones\benchmarks\testMatrix1</code>. The file <code>testMatrix1</code> represents the example described herein. We also support <code>.xz</code>, <code>.lzma</code>, <code>.bz2</code>, and <code>.bzip2</code> compressed text files.</p>
 <p><strong>Example Output:</strong></p>
-<pre><code>testMatrix1: Dominating Set Found 2, 3
+<pre><code>testMatrix1: Dominating Set Found 1, 2
 </code></pre>
-<p>This indicates nodes <code>2, 3</code> form a Dominating Set.</p>
+<p>This indicates nodes <code>1, 2</code> form a Dominating Set.</p>
 </li>
 </ol>
 <hr>
@@ -215,7 +215,7 @@ cd furones
 <pre><code class="language-bash">asia -i ./benchmarks/testMatrix2 -c
 </code></pre>
 <p><strong>Output:</strong></p>
-<pre><code>testMatrix2: Dominating Set Size 2
+<pre><code>testMatrix2: Dominating Set Size 4
 </code></pre>
 <hr>
 <h1>Command Options</h1>
@@ -262,30 +262,6 @@ options:
   --consistency         require a linear-time certificate for the Furones 2-approximation bound
   --version             show program's version number and exit
 </code></pre>
-<hr>
-<h2>NPBench Experiments</h2>
-<p>The NPBench benchmark instances are not uploaded to this repository. Anyone can download the DIMACS clique-complement instances from:</p>
-<p><a href="https://github.com/dynaroars/npbench/tree/master/instances/vertex_cover/clique_complement">https://github.com/dynaroars/npbench/tree/master/instances/vertex_cover/clique_complement</a></p>
-<p>ThanhVu Nguyen and Thang Bui, <strong>NP-Complete Benchmark Instances</strong>, <a href="https://roars.dev/npbench/">https://roars.dev/npbench/</a>. The folder uses the vertex-cover DIMACS clique complements as hard dominating-set instances.</p>
-<p>Run the certified batch experiment with:</p>
-<pre><code class="language-bash">python -m furones.batch -i ./experiments/ -c -l --consistency
-</code></pre>
-<p>or equivalently:</p>
-<pre><code class="language-bash">batch_asia -i ./experiments/ -c -l --consistency
-</code></pre>
-<p>The <code>--consistency</code> flag requires Furones to return only when its linear-time sufficient consistency check certifies the 2-approximation bound. The logged NPBench run used in the paper is stored as <code>experiments/np_bench.txt</code>.</p>
-<hr>
-<h2>VC-Bench Network Experiment</h2>
-<p>The paper also reports a comparison with NetworkX's approximation implementation on a compendium selected from Cai's VC-Bench real-world graph collection:</p>
-<p>Shaowei Cai, <strong>A Collection of Large Graphs for Vertex Cover Benchmarking</strong>, <a href="https://lcs.ios.ac.cn/~caisw/graphs.html">https://lcs.ios.ac.cn/~caisw/graphs.html</a>. The collection contains undirected simple graphs from the Network Data Repository in DIMACS graph format.</p>
-<p>The VC-Bench graph instances are not uploaded to this repository; download them from Cai's page and place the selected DIMACS files in <code>network/</code> before running the command below.</p>
-<p>Run the NetworkX comparison experiment with:</p>
-<pre><code class="language-bash">python -m furones.batch -i ./network/ -c -a -l --consistency
-</code></pre>
-<p>or equivalently:</p>
-<pre><code class="language-bash">batch_asia -i ./network/ -c -a -l --consistency
-</code></pre>
-<p>The <code>-a</code> flag runs NetworkX's logarithmic-ratio approximation before Furones, so the log compares both running time and the CLI's upper-bound ratio. The logged run used in the paper is stored as <code>network/network.txt</code>; it contains one graph that is not certified by the sufficient <code>--consistency</code> check, although its logged upper-bound ratio is below 2.</p>
 <hr>
 <h1>Testing Application</h1>
 <p>A command-line utility named <code>test_asia</code> is provided for evaluating the Algorithm using randomly generated, large sparse matrices. It supports the following options:</p>
