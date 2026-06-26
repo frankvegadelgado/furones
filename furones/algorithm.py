@@ -94,6 +94,50 @@ def greedy_closed_degree_dominating_set(G: nx.Graph) -> Set[Any]:
     return prune_redundant_vertices_dominating(G, D)
 
 
+def greedy_max_coverage_dominating_set(G: nx.Graph) -> Set[Any]:
+    """
+    Build a dominating-set candidate by the dynamic greedy maximum-coverage rule.
+
+    Unlike :func:`greedy_closed_degree_dominating_set`, which fixes the scan
+    order once by initial closed degree, this routine re-evaluates coverage
+    after every selection: at each step it selects a vertex whose closed
+    neighbourhood covers the largest number of still-undominated vertices, then
+    updates the residual coverage.  This is the classical Set Cover greedy
+    specialised to closed neighbourhoods, and it attains the
+    H(Δ + 1) = (1 + ln(Δ + 1)) approximation guarantee for Dominating Set
+    (Johnson; Lovász; Chvátal), where Δ is the maximum degree.
+
+    As with every Furones candidate, the result is pruned and validated on the
+    original graph before it can be selected.  A bucket-priority-queue variant
+    runs in O(n + m); this direct version keeps an incrementally updated gain
+    map and is adequate for the candidate portfolio.
+
+    Reference implementation: ``greedy_dominating`` in
+    ``car/run_high_degree_experiment.py``.
+    """
+    n = G.number_of_nodes()
+    if n == 0:
+        return set()
+
+    # gain[v] = |N[v] ∩ undominated|, maintained incrementally.
+    gain: Dict[Any, int] = {v: G.degree(v) + 1 for v in G.nodes()}
+    undominated: Set[Any] = set(G.nodes())
+    D: Set[Any] = set()
+
+    while undominated:
+        # Vertex of maximum current gain; ties broken by node iteration order,
+        # which is deterministic for a fixed input graph.
+        s = max(G.nodes(), key=lambda v: gain[v])
+        D.add(s)
+        # Every vertex newly covered by s stops contributing to its neighbours'
+        # gains.
+        newly = [w for w in _closed_neighborhood(G, s) if w in undominated]
+        for w in newly:
+            undominated.discard(w)
+            for z in _closed_neighborhood(G, w):
+                gain[z] -= 1
+
+    return prune_redundant_vertices_dominating(G, D)
 
 
 def low_degree_witness_dominating_set(G: nx.Graph) -> Set[Any]:
@@ -774,11 +818,14 @@ def is_two_approximation_certified(
 
 def find_dominating_set(graph, eps=1, consistency=False):
     """
-    Compute a Furones v0.3.4 dominating set of an undirected graph.
+    Compute a Furones v0.3.5 dominating set of an undirected graph.
 
     The algorithm combines structural reductions with Baker's PTAS for planar graphs
     and linear original-graph sweeps on the original working graph.
-    The closed-degree sweep protects high-coverage vertices, the
+    The dynamic greedy maximum-coverage candidate re-evaluates coverage after
+    every selection and attains the H(Δ+1) = (1 + ln(Δ+1)) guarantee, so the
+    returned set (the smallest valid candidate) never exceeds it.  The
+    closed-degree sweep protects high-coverage vertices, the
     low-degree-witness sweep protects vertices that dominate many small private
     witnesses, the medium-degree-witness sweep downweights high-degree booster noise,
     the order-ownership witness sweep assigns moderate witnesses to deterministic high-degree owners,
@@ -859,6 +906,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
     # general rule: any graph that admits such a small candidate benefits, and
     # no planted structure is detected or hardcoded.
     early_sweep = greedy_closed_degree_dominating_set(working_graph)
+    early_greedy = greedy_max_coverage_dominating_set(working_graph)
     early_witness = low_degree_witness_dominating_set(working_graph)
     early_medium = medium_degree_witness_dominating_set(working_graph)
     early_owner_late = order_ownership_witness_dominating_set(working_graph, "late")
@@ -869,6 +917,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
     early_candidate = _choose_best_valid_candidate(
         working_graph,
         early_sweep,
+        early_greedy,
         early_witness,
         early_medium,
         early_owner_late,
@@ -960,6 +1009,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
         lifted_candidate,
         early_candidate,
         early_sweep,
+        early_greedy,
         early_witness,
         early_medium,
         early_owner_late,
