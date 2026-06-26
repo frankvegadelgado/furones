@@ -848,7 +848,7 @@ def is_two_approximation_certified(
 
 def find_dominating_set(graph, eps=1, consistency=False):
     """
-    Compute a Furones v0.3.6 dominating set of an undirected graph.
+    Compute a Furones v0.3.7 dominating set of an undirected graph.
 
     The algorithm combines structural reductions with Baker's PTAS for planar graphs
     and linear original-graph sweeps on the original working graph.

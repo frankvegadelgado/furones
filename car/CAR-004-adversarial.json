@@ -1,0 +1,399 @@
+{
+  "car_id": "CAR-004-adversarial",
+  "title": "Adversarial worst-case stress test of the near-threshold ratio hypothesis",
+  "generated": "2026-06-26T06:37:51.572552+00:00",
+  "base_seed": 1000,
+  "instances_requested": 10000,
+  "solver": "furones.algorithm.find_dominating_set (v0.3.6, full portfolio)",
+  "rho_definition": "rho(n) = max(4, 0.5 * ln n)",
+  "binding_bound_note": "All feasible instance sizes have 0.5*ln(n) < 4, so the binding bound is the constant floor rho = 4; this run stress-tests that floor.",
+  "objective": "maximize the observed ratio |D_furones| / gamma(G) over adversarial families",
+  "families": [
+    {
+      "family": "circulant_efficient",
+      "instances": 1429,
+      "n_range": [
+        10,
+        16
+      ],
+      "gamma_range": [
+        2,
+        4
+      ],
+      "all_valid": true,
+      "mean_ratio": 1.0,
+      "max_ratio": 1.0,
+      "pct_optimal": 100.0,
+      "pct_within_rho": 100.0
+    },
+    {
+      "family": "cocktail_multipartite",
+      "instances": 1428,
+      "n_range": [
+        4,
+        16
+      ],
+      "gamma_range": [
+        2,
+        2
+      ],
+      "all_valid": true,
+      "mean_ratio": 1.0,
+      "max_ratio": 1.0,
+      "pct_optimal": 100.0,
+      "pct_within_rho": 100.0
+    },
+    {
+      "family": "geometric_setcover",
+      "instances": 1429,
+      "n_range": [
+        10,
+        16
+      ],
+      "gamma_range": [
+        3,
+        5
+      ],
+      "all_valid": true,
+      "mean_ratio": 1.0,
+      "max_ratio": 1.0,
+      "pct_optimal": 100.0,
+      "pct_within_rho": 100.0
+    },
+    {
+      "family": "greedy_trap",
+      "instances": 1429,
+      "n_range": [
+        6,
+        16
+      ],
+      "gamma_range": [
+        2,
+        4
+      ],
+      "all_valid": true,
+      "mean_ratio": 1.0,
+      "max_ratio": 1.0,
+      "pct_optimal": 100.0,
+      "pct_within_rho": 100.0
+    },
+    {
+      "family": "perfect_code_perturbed",
+      "instances": 1429,
+      "n_range": [
+        7,
+        16
+      ],
+      "gamma_range": [
+        1,
+        4
+      ],
+      "all_valid": true,
+      "mean_ratio": 1.0,
+      "max_ratio": 1.0,
+      "pct_optimal": 100.0,
+      "pct_within_rho": 100.0
+    },
+    {
+      "family": "random_dense",
+      "instances": 1428,
+      "n_range": [
+        8,
+        16
+      ],
+      "gamma_range": [
+        1,
+        5
+      ],
+      "all_valid": true,
+      "mean_ratio": 1.0,
+      "max_ratio": 1.0,
+      "pct_optimal": 100.0,
+      "pct_within_rho": 100.0
+    },
+    {
+      "family": "random_regular",
+      "instances": 1428,
+      "n_range": [
+        8,
+        16
+      ],
+      "gamma_range": [
+        2,
+        5
+      ],
+      "all_valid": true,
+      "mean_ratio": 1.0011,
+      "max_ratio": 1.3333,
+      "pct_optimal": 99.65,
+      "pct_within_rho": 100.0
+    }
+  ],
+  "overall": {
+    "instances": 10000,
+    "all_valid": true,
+    "pct_within_rho": 100.0,
+    "pct_optimal": 99.95,
+    "mean_ratio": 1.0001,
+    "max_ratio": 1.3333,
+    "num_violations": 0
+  },
+  "worst_instances": [
+    {
+      "family": "random_regular",
+      "n": 16,
+      "m": 40,
+      "delta": 5,
+      "Delta": 5,
+      "gamma": 3,
+      "furones_size": 4,
+      "furones_valid": true,
+      "ratio": 1.3333,
+      "tau": 1.125,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": false,
+      "index": 3708,
+      "seed": 4708
+    },
+    {
+      "family": "random_regular",
+      "n": 14,
+      "m": 28,
+      "delta": 4,
+      "Delta": 4,
+      "gamma": 3,
+      "furones_size": 4,
+      "furones_valid": true,
+      "ratio": 1.3333,
+      "tau": 1.0714,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": false,
+      "index": 9014,
+      "seed": 10014
+    },
+    {
+      "family": "random_regular",
+      "n": 14,
+      "m": 28,
+      "delta": 4,
+      "Delta": 4,
+      "gamma": 3,
+      "furones_size": 4,
+      "furones_valid": true,
+      "ratio": 1.3333,
+      "tau": 1.0714,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": false,
+      "index": 9448,
+      "seed": 10448
+    },
+    {
+      "family": "random_regular",
+      "n": 16,
+      "m": 24,
+      "delta": 3,
+      "Delta": 3,
+      "gamma": 4,
+      "furones_size": 5,
+      "furones_valid": true,
+      "ratio": 1.25,
+      "tau": 1.0,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": false,
+      "index": 5185,
+      "seed": 6185
+    },
+    {
+      "family": "random_regular",
+      "n": 16,
+      "m": 24,
+      "delta": 3,
+      "Delta": 3,
+      "gamma": 4,
+      "furones_size": 5,
+      "furones_valid": true,
+      "ratio": 1.25,
+      "tau": 1.0,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": false,
+      "index": 9273,
+      "seed": 10273
+    },
+    {
+      "family": "greedy_trap",
+      "n": 12,
+      "m": 16,
+      "delta": 1,
+      "Delta": 5,
+      "gamma": 3,
+      "furones_size": 3,
+      "furones_valid": true,
+      "ratio": 1.0,
+      "tau": 1.5,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": true,
+      "index": 0,
+      "seed": 1000
+    },
+    {
+      "family": "geometric_setcover",
+      "n": 10,
+      "m": 10,
+      "delta": 1,
+      "Delta": 3,
+      "gamma": 3,
+      "furones_size": 3,
+      "furones_valid": true,
+      "ratio": 1.0,
+      "tau": 1.2,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": true,
+      "index": 1,
+      "seed": 1001
+    },
+    {
+      "family": "perfect_code_perturbed",
+      "n": 13,
+      "m": 27,
+      "delta": 4,
+      "Delta": 5,
+      "gamma": 3,
+      "furones_size": 3,
+      "furones_valid": true,
+      "ratio": 1.0,
+      "tau": 1.3846,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": true,
+      "index": 2,
+      "seed": 1002
+    },
+    {
+      "family": "circulant_efficient",
+      "n": 16,
+      "m": 64,
+      "delta": 8,
+      "Delta": 8,
+      "gamma": 2,
+      "furones_size": 2,
+      "furones_valid": true,
+      "ratio": 1.0,
+      "tau": 1.125,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": true,
+      "index": 3,
+      "seed": 1003
+    },
+    {
+      "family": "cocktail_multipartite",
+      "n": 14,
+      "m": 84,
+      "delta": 12,
+      "Delta": 12,
+      "gamma": 2,
+      "furones_size": 2,
+      "furones_valid": true,
+      "ratio": 1.0,
+      "tau": 1.8571,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": true,
+      "index": 4,
+      "seed": 1004
+    },
+    {
+      "family": "random_regular",
+      "n": 14,
+      "m": 49,
+      "delta": 7,
+      "Delta": 7,
+      "gamma": 3,
+      "furones_size": 3,
+      "furones_valid": true,
+      "ratio": 1.0,
+      "tau": 1.7143,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": true,
+      "index": 5,
+      "seed": 1005
+    },
+    {
+      "family": "random_dense",
+      "n": 12,
+      "m": 20,
+      "delta": 1,
+      "Delta": 5,
+      "gamma": 3,
+      "furones_size": 3,
+      "furones_valid": true,
+      "ratio": 1.0,
+      "tau": 1.5,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": true,
+      "index": 6,
+      "seed": 1006
+    },
+    {
+      "family": "greedy_trap",
+      "n": 8,
+      "m": 11,
+      "delta": 1,
+      "Delta": 4,
+      "gamma": 2,
+      "furones_size": 2,
+      "furones_valid": true,
+      "ratio": 1.0,
+      "tau": 1.25,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": true,
+      "index": 7,
+      "seed": 1007
+    },
+    {
+      "family": "geometric_setcover",
+      "n": 16,
+      "m": 21,
+      "delta": 1,
+      "Delta": 6,
+      "gamma": 3,
+      "furones_size": 3,
+      "furones_valid": true,
+      "ratio": 1.0,
+      "tau": 1.3125,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": true,
+      "index": 8,
+      "seed": 1008
+    },
+    {
+      "family": "perfect_code_perturbed",
+      "n": 16,
+      "m": 32,
+      "delta": 4,
+      "Delta": 4,
+      "gamma": 4,
+      "furones_size": 4,
+      "furones_valid": true,
+      "ratio": 1.0,
+      "tau": 1.25,
+      "rho_n": 4.0,
+      "within_rho": true,
+      "optimal": true,
+      "index": 9,
+      "seed": 1009
+    }
+  ],
+  "violations": []
+}

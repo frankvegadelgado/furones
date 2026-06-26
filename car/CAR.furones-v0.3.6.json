@@ -1,0 +1,101 @@
+{
+  "id": "car:b43233cd04c24beaf0fdd7a221a26cbc81b5c17b1ec3f4d8cafaec40fe1470cc",
+  "run_id": "furones-v0.3.6-car-2026-06-23-1000-exact",
+  "created_at": "2026-06-26T06:37:09.305264+00:00",
+  "run": {
+    "kind": "measurement",
+    "name": "Furones v0.3.6 1000-instance exact small-graph CAR benchmark",
+    "model": "ChatGPT-assisted design (CAR-001/002); Claude v0.3.6 update",
+    "version": "furones-0.3.6",
+    "seed": 20260622,
+    "steps": [
+      {
+        "id": "step-1",
+        "run_id": "furones-v0.3.6-car-2026-06-23-1000-exact",
+        "order_index": 1,
+        "checkpoint_type": "scripted-exact-measurement",
+        "model": "ChatGPT-assisted Codex session",
+        "prompt": "Measure Furones on 1000 small instances with exact domination numbers, compare ratios, and measure each strategy's candidate size and percent wins.",
+        "token_budget": null,
+        "proof_mode": "replayable-local-run-with-exhaustive-optima"
+      }
+    ],
+    "sampler": {
+      "temp": null,
+      "top_p": null,
+      "rng": "python-random"
+    }
+  },
+  "proof": {
+    "match_kind": "replayable-script-plus-hashes",
+    "ratio_claim_measured": "rho_hat_final = 1.0 on 1000 exact small instances",
+    "scope_warning": "Finite exact benchmark evidence only; not a proof of a universal constant approximation ratio."
+  },
+  "policy_ref": {
+    "hash": "sha256:3eb7572051c7d64d161de1832ed3cff7f62309adffced285e187ae3c0aaf8dff",
+    "egress": false,
+    "estimator": "local-scripted-exhaustive-measurement"
+  },
+  "budgets": {
+    "usd": null,
+    "tokens": null,
+    "nature_cost": null
+  },
+  "provenance": [
+    {
+      "claim_type": "CAR-001-ratio-constant",
+      "path": "car/CAR-001-ratio-constant.json",
+      "sha256": "sha256:b43233cd04c24beaf0fdd7a221a26cbc81b5c17b1ec3f4d8cafaec40fe1470cc"
+    },
+    {
+      "claim_type": "CAR-002-strategy-ablation",
+      "path": "car/CAR-002-strategy-ablation.json",
+      "sha256": "sha256:ba8137b3aa23faa2f317f7be18ca408f0143011e1d1832881d1052d614ec7275"
+    },
+    {
+      "claim_type": "INTEGRITY-REPORT",
+      "path": "car/INTEGRITY_REPORT.md",
+      "sha256": "sha256:3eb7572051c7d64d161de1832ed3cff7f62309adffced285e187ae3c0aaf8dff"
+    },
+    {
+      "claim_type": "car-benchmark-cases",
+      "path": "car/car_benchmark_cases.csv",
+      "sha256": "sha256:eadff05fd54e6adc61660ee2bbdb92183210bdd3567974c8ba31df29f8957d87"
+    },
+    {
+      "claim_type": "family-summary",
+      "path": "car/family_summary.csv",
+      "sha256": "sha256:bbdf8030a4d9550a6e0123d9c4482567fa3512042df432d37e1cc6b0993dfe57"
+    },
+    {
+      "claim_type": "strategy-ablation-by-instance",
+      "path": "car/strategy_ablation_by_instance.csv",
+      "sha256": "sha256:ad6a6f44b20bfb6b330df8548f2ab36213059948d5576a2c25a7ec9e2268ea6c"
+    },
+    {
+      "claim_type": "strategy-ablation-summary",
+      "path": "car/strategy_ablation_summary.csv",
+      "sha256": "sha256:d5b302a83992237c9957bbda8c625f725ca8d06e8f5a6ca56b7de772095d60fa"
+    },
+    {
+      "claim_type": "run-integrity-measurements",
+      "path": "car/run_integrity_measurements.py",
+      "sha256": "sha256:2a9068e3f4539740057ce27890d2ce245265828bf35c9344e859655729fa8a80"
+    }
+  ],
+  "checkpoints": [
+    "ckpt:furones-v0.3.6-car-2026-06-23-1000-exact:step-1"
+  ],
+  "sgrade": {
+    "score": null,
+    "components": {
+      "provenance": 1.0,
+      "energy": null,
+      "replay": 1.0,
+      "consent": null,
+      "incidents": 0.0
+    }
+  },
+  "signer_public_key": null,
+  "signatures": []
+}

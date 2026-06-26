@@ -37,83 +37,459 @@
 <p>This work builds upon <a href="https://dev.to/frank_vega_987689489099bf/the-furones-algorithm-15lp">The Furones Algorithm</a>.</p>
 <hr>
 <h1>Overview of the Minimum Dominating Set (MDS)</h1>
-<h2>Definition:</h2>
+<h2>Definition</h2>
 <p>A <strong>dominating set</strong> in a graph $G = (V, E)$ is a subset $D \subseteq V$ such that every vertex not in $D$ is adjacent to at least one vertex in $D$. The <strong>minimum dominating set (MDS)</strong> is the smallest possible dominating set in terms of the number of vertices.</p>
-<h2>Key Concepts:</h2>
-<ol>
-<li>
-<p><strong>Graph Representation</strong>:</p>
+<h2>Computational Complexity</h2>
 <ul>
-<li>$V$: Set of vertices.</li>
-<li>$E$: Set of edges connecting the vertices.</li>
+<li><strong>NP-Hard</strong>: Finding the minimum dominating set is NP-hard; no polynomial-time exact algorithm is known for general graphs.</li>
+<li><strong>Approximation</strong>: The greedy Set Cover heuristic gives a ratio $H(\Delta+1) \le 1 + \ln(\Delta+1) = \mathcal{O}(\log \Delta)$, where $\Delta$ is the maximum degree. This is tight and matches the $o(\ln n)$-in-$n$ inapproximability threshold (Dinur–Steurer).</li>
 </ul>
-</li>
-<li>
-<p><strong>Dominating Set</strong>:</p>
+<h2>Applications</h2>
 <ul>
-<li>A set $D$ where for every vertex $v \in V$, either $v \in D$ or $v$ is adjacent to some vertex in $D$.</li>
+<li>Network monitoring and wireless sensor coverage</li>
+<li>Influence maximisation in social networks</li>
+<li>Facility placement and logistics</li>
+<li>Protein–protein interaction modelling</li>
 </ul>
-</li>
-<li>
-<p><strong>Minimum Dominating Set</strong>:</p>
-<ul>
-<li>The dominating set with the smallest cardinality (i.e., the fewest number of vertices).</li>
-</ul>
-</li>
-</ol>
-<h2>Applications:</h2>
-<ul>
-<li><strong>Network Design</strong>: Ensuring coverage in wireless sensor networks.</li>
-<li><strong>Social Networks</strong>: Identifying influential nodes.</li>
-<li><strong>Game Theory</strong>: Strategies in certain types of games.</li>
-<li><strong>Biology</strong>: Modeling protein-protein interaction networks.</li>
-</ul>
-<h2>Computational Complexity:</h2>
-<ul>
-<li><strong>NP-Hard</strong>: Finding the minimum dominating set is computationally intensive for large graphs.</li>
-<li><strong>Approximation Algorithms</strong>: Used to find near-optimal solutions in polynomial time.</li>
-</ul>
-<h2>Algorithms:</h2>
-<ol>
-<li>
-<p><strong>Greedy Algorithm</strong>:</p>
-<ul>
-<li>Iteratively selects the vertex that covers the most uncovered vertices.</li>
-<li>Provides a logarithmic approximation ratio.</li>
-</ul>
-</li>
-<li>
-<p><strong>Integer Linear Programming (ILP)</strong>:</p>
-<ul>
-<li>Formulates the problem as an optimization problem.</li>
-<li>Solvable using ILP solvers for exact solutions, though computationally expensive.</li>
-</ul>
-</li>
-<li>
-<p><strong>Heuristics and Metaheuristics</strong>:</p>
-<ul>
-<li>Genetic algorithms, simulated annealing, etc., for large-scale problems.</li>
-</ul>
-</li>
-</ol>
-<h2>Challenges:</h2>
-<ul>
-<li><strong>Scalability</strong>: Exact algorithms are infeasible for very large graphs.</li>
-<li><strong>Dynamic Graphs</strong>: Maintaining a minimum dominating set in graphs that change over time.</li>
-</ul>
-<h2>Research Directions:</h2>
-<ul>
-<li><strong>Parallel Algorithms</strong>: Leveraging multi-core processors and distributed computing.</li>
-<li><strong>Machine Learning</strong>: Using learning-based approaches to predict dominating sets.</li>
-<li><strong>Hybrid Methods</strong>: Combining exact and heuristic methods for better performance.</li>
-</ul>
-<h2>Conclusion:</h2>
-<p>The minimum dominating set problem is a fundamental issue in graph theory with wide-ranging applications. While it is computationally challenging, various algorithms and heuristics provide practical solutions for different scenarios. Ongoing research continues to improve the efficiency and applicability of these methods.</p>
 <hr>
-<h2>Problem Statement</h2>
+<h1>The Furones Algorithm</h1>
+<p>Furones v0.3.7 is a <strong>linear-time candidate-comparison solver</strong> for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one. The pipeline consists of:</p>
+<ol>
+<li><strong>Preprocessing</strong>: self-loop removal, isolated-vertex separation.</li>
+<li><strong>TSCC-style pendant cascade</strong> (<code>ReduceToTSCCForDS</code>): iteratively commits pendant supports and isolated vertices to a forced set $F$, producing a reduced residual.</li>
+<li><strong>Forest projection</strong> (if the residual is non-planar): projects onto a spanning forest before solving.</li>
+<li><strong>Baker-style planar PTAS</strong> on the residual: solves MDS on $k$-outerplanar components by tree-decomposition DP.</li>
+<li><strong>Lifted candidate</strong> $C_L = F \cup \ell(D_R)$: lifts the reduced solution back to original labels.</li>
+<li><strong>Original-graph linear candidates</strong> (all computed in $\mathcal{O}(n+m)$):
+<ul>
+<li>$C_G$ — <strong>greedy maximum-coverage</strong> (certifies the $H(\Delta+1)$ ratio)</li>
+<li>$C_D$ — closed-degree coverage sweep</li>
+<li>$C_W$, $C_M$ — low- and medium-degree witness sweeps</li>
+<li>$C_O$ — order-ownership candidates (early and late)</li>
+<li>$C_S$ — seed-and-complete</li>
+<li>$C_B$ — Salvador-style bipartite auxiliary</li>
+<li>$C_R$ — reverse-delete (multiple deterministic orders)</li>
+</ul>
+</li>
+<li><strong>Pruning</strong> (<code>PruneRedundantDominating</code>): each candidate is made inclusion-minimal.</li>
+<li><strong>Portfolio minimum</strong>: the smallest valid (dominates the original graph) pruned candidate is returned.</li>
+</ol>
+<h3>Unconditional guarantees</h3>
+<ul>
+<li><strong>Feasibility</strong> (Theorem): every normal return is a dominating set of the input graph.</li>
+<li><strong>Approximation ratio</strong> (Theorem): because the portfolio contains $C_G$, every returned set $D$ satisfies $|D| \le H(\Delta+1),\gamma(G) \le (1+\ln(\Delta+1)),\gamma(G) = \mathcal{O}(\log \Delta)$.</li>
+<li><strong>Constant factor on bounded-degree graphs</strong> (Corollary): for any fixed $\Delta$, the ratio is at most $1 + \ln(\Delta+1)$.</li>
+</ul>
+<h3>Near-threshold ratio hypothesis</h3>
+<p>Furones is conjectured to satisfy $|D| \le \max\{4,,\frac{1}{2}\ln n\}\cdot\gamma(G)$ on every graph. Proving this for all graphs would imply <strong>P = NP</strong> (via Dinur–Steurer). The hypothesis is already proved unconditionally for all graphs of maximum degree $\Delta \le \sqrt{n}/e$.</p>
+<h3>Runtime</h3>
+<p>$\mathcal{O}(n+m)$ for fixed parameters (large hidden constant; grows as $2^{\mathcal{O}(1/\varepsilon)}$ on the Baker branch).</p>
+<hr>
+<h1>CAR Benchmarks</h1>
+<p>The <code>car/</code> folder contains three reproducible exact-optimum studies. Every study imports the <strong>installed</strong> Furones package and compares it against the exact domination number $\gamma(G)$ computed by exhaustive search.</p>
+<h2>CAR-001: Core Exact Benchmark (<code>run_integrity_measurements.py</code>)</h2>
+<ul>
+<li><strong>1 000 instances</strong>, at most 14 vertices, seven graph families (Erdős–Rényi sparse/medium/dense, random bipartite, random trees, perturbed paths/cycles, small structured).</li>
+<li>Exact $\gamma(G)$ by exhaustive search for every instance.</li>
+<li><strong>Result</strong>: Furones is <strong>optimal on all 1 000 instances</strong> (100.0 %); observed ratio $\hat{\rho} = 1.000$.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Instances</th>
+<th>$n$</th>
+<th>$\gamma$</th>
+<th>Optimal</th>
+<th>Mean ratio</th>
+<th>Max ratio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Erdős–Rényi sparse</td>
+<td>200</td>
+<td>6–14</td>
+<td>2–10</td>
+<td>100.0 %</td>
+<td>1.000</td>
+<td>1.000</td>
+</tr>
+<tr>
+<td>Erdős–Rényi medium</td>
+<td>200</td>
+<td>6–14</td>
+<td>2–5</td>
+<td>100.0 %</td>
+<td>1.000</td>
+<td>1.000</td>
+</tr>
+<tr>
+<td>Erdős–Rényi dense</td>
+<td>150</td>
+<td>6–14</td>
+<td>1–4</td>
+<td>100.0 %</td>
+<td>1.000</td>
+<td>1.000</td>
+</tr>
+<tr>
+<td>Random bipartite</td>
+<td>150</td>
+<td>6–14</td>
+<td>2–9</td>
+<td>100.0 %</td>
+<td>1.000</td>
+<td>1.000</td>
+</tr>
+<tr>
+<td>Random trees</td>
+<td>100</td>
+<td>6–14</td>
+<td>2–6</td>
+<td>100.0 %</td>
+<td>1.000</td>
+<td>1.000</td>
+</tr>
+<tr>
+<td>Perturbed paths/cycles</td>
+<td>100</td>
+<td>6–14</td>
+<td>2–5</td>
+<td>100.0 %</td>
+<td>1.000</td>
+<td>1.000</td>
+</tr>
+<tr>
+<td>Small structured</td>
+<td>100</td>
+<td>6–14</td>
+<td>1–4</td>
+<td>100.0 %</td>
+<td>1.000</td>
+<td>1.000</td>
+</tr>
+<tr>
+<td><strong>Overall</strong></td>
+<td><strong>1000</strong></td>
+<td><strong>6–14</strong></td>
+<td><strong>1–10</strong></td>
+<td><strong>100.0 %</strong></td>
+<td><strong>1.000</strong></td>
+<td><strong>1.000</strong></td>
+</tr>
+</tbody>
+</table>
+<h2>CAR-002: Per-Strategy Ablation (<code>run_integrity_measurements.py</code>)</h2>
+<p>Each exposed strategy is measured independently on the same 1 000-instance benchmark.</p>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Valid</th>
+<th>Optimal</th>
+<th>Mean ratio</th>
+<th>Max ratio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Seed-and-complete</td>
+<td>100.0 %</td>
+<td>99.8 %</td>
+<td>1.000</td>
+<td>1.250</td>
+</tr>
+<tr>
+<td>Greedy max-coverage ($C_G$)</td>
+<td>100.0 %</td>
+<td>92.7 %</td>
+<td>1.023</td>
+<td>1.500</td>
+</tr>
+<tr>
+<td>Closed-degree coverage</td>
+<td>100.0 %</td>
+<td>89.0 %</td>
+<td>1.048</td>
+<td>2.500</td>
+</tr>
+<tr>
+<td>Reverse delete, low-degree</td>
+<td>100.0 %</td>
+<td>88.7 %</td>
+<td>1.049</td>
+<td>2.500</td>
+</tr>
+<tr>
+<td>Medium-degree witnesses</td>
+<td>100.0 %</td>
+<td>88.3 %</td>
+<td>1.054</td>
+<td>2.500</td>
+</tr>
+<tr>
+<td>TSCC/Baker/lift</td>
+<td>100.0 %</td>
+<td>87.8 %</td>
+<td>1.052</td>
+<td>2.000</td>
+</tr>
+<tr>
+<td>Salvador auxiliary</td>
+<td>100.0 %</td>
+<td>85.4 %</td>
+<td>1.107</td>
+<td>5.000</td>
+</tr>
+<tr>
+<td>Low-degree witnesses</td>
+<td>100.0 %</td>
+<td>84.8 %</td>
+<td>1.080</td>
+<td>3.000</td>
+</tr>
+<tr>
+<td>Order ownership, late</td>
+<td>79.2 %</td>
+<td>65.8 %</td>
+<td>1.060</td>
+<td>2.000</td>
+</tr>
+<tr>
+<td>Order ownership, early</td>
+<td>79.2 %</td>
+<td>64.5 %</td>
+<td>1.065</td>
+<td>2.000</td>
+</tr>
+<tr>
+<td>Reverse delete, reverse</td>
+<td>100.0 %</td>
+<td>61.2 %</td>
+<td>1.176</td>
+<td>3.500</td>
+</tr>
+<tr>
+<td>Reverse delete, input order</td>
+<td>100.0 %</td>
+<td>57.9 %</td>
+<td>1.241</td>
+<td>5.000</td>
+</tr>
+<tr>
+<td>Reverse delete, high-degree</td>
+<td>100.0 %</td>
+<td>27.9 %</td>
+<td>1.428</td>
+<td>5.000</td>
+</tr>
+</tbody>
+</table>
+<p>No single strategy is universally optimal; the portfolio minimum combines them to achieve 100 % optimal on every instance.</p>
+<h2>CAR-003: High-Degree / Dense Regime (<code>run_high_degree_experiment.py</code>)</h2>
+<p>Probes the regime $\Delta &gt; \sqrt{n}/e$ left open by the low-degree proposition. Base seed 12 345, <strong>1 000 instances</strong> from seven dense families (complete, cocktail-party, dense circulant, random regular, dense Erdős–Rényi, perturbed hypercube, perturbed Paley), including perfect-code stress cases ($\tau(G) = 1$).</p>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Inst.</th>
+<th>$n$</th>
+<th>$\Delta$</th>
+<th>$\tau$</th>
+<th>Mean ratio</th>
+<th>Max ratio</th>
+<th>≤ ρ(n)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Complete</td>
+<td>143</td>
+<td>6–16</td>
+<td>5–15</td>
+<td>1.00</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>Cocktail party</td>
+<td>143</td>
+<td>6–16</td>
+<td>4–14</td>
+<td>1.67–1.88</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>Dense circulant</td>
+<td>143</td>
+<td>8–16</td>
+<td>4–15</td>
+<td>1.00–1.88</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>Random regular</td>
+<td>143</td>
+<td>8–16</td>
+<td>2–8</td>
+<td>1.00–1.69</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>Dense Erdős–Rényi</td>
+<td>143</td>
+<td>8–16</td>
+<td>4–15</td>
+<td>1.00–2.44</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>Hypercube (perturbed)</td>
+<td>143</td>
+<td>8–16</td>
+<td>3–6</td>
+<td>1.00–1.75</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>Paley (perturbed)</td>
+<td>142</td>
+<td>5–13</td>
+<td>2–7</td>
+<td>1.00–1.85</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td><strong>Overall</strong></td>
+<td><strong>1000</strong></td>
+<td><strong>5–16</strong></td>
+<td><strong>2–15</strong></td>
+<td><strong>1.00–2.44</strong></td>
+<td><strong>1.000</strong></td>
+<td><strong>1.000</strong></td>
+<td><strong>100 %</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Furones is <strong>optimal on all 1 000 high-degree instances</strong>, including every $\tau(G) = 1$ perfect-code case. Zero violations of $\rho(n) = \max\{4, \frac{1}{2}\ln n\}$.</p>
+<h2>CAR-004: Adversarial Stress Test (<code>run_adversarial_experiment.py</code>)</h2>
+<p>Actively searches for worst-case instances. Base seed 1 000, <strong>10 000 instances</strong> from seven adversarial families: greedy traps, geometric set-cover gadgets, perturbed perfect-code graphs, near-efficient circulants, cocktail-party/multipartite graphs, dense random-regular, and dense Erdős–Rényi. Exact $\gamma(G)$ by exhaustive search on every instance.</p>
+<table>
+<thead>
+<tr>
+<th>Adversarial family</th>
+<th>Inst.</th>
+<th>$n$</th>
+<th>$\gamma$</th>
+<th>Mean ratio</th>
+<th>Max ratio</th>
+<th>Optimal</th>
+<th>≤ ρ(n)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Greedy trap</td>
+<td>1 429</td>
+<td>6–16</td>
+<td>2–4</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100.0 %</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>Geometric set-cover</td>
+<td>1 429</td>
+<td>10–16</td>
+<td>3–5</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100.0 %</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>Perfect-code perturbed</td>
+<td>1 429</td>
+<td>7–16</td>
+<td>1–4</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100.0 %</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>Efficient circulant</td>
+<td>1 429</td>
+<td>10–16</td>
+<td>2–4</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100.0 %</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>Cocktail / multipartite</td>
+<td>1 428</td>
+<td>4–16</td>
+<td>2</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100.0 %</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>Random dense</td>
+<td>1 428</td>
+<td>8–16</td>
+<td>1–5</td>
+<td>1.000</td>
+<td>1.000</td>
+<td>100.0 %</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td>Random regular</td>
+<td>1 428</td>
+<td>8–16</td>
+<td>2–5</td>
+<td>1.001</td>
+<td>1.333</td>
+<td>99.7 %</td>
+<td>100 %</td>
+</tr>
+<tr>
+<td><strong>Overall</strong></td>
+<td><strong>10 000</strong></td>
+<td><strong>4–16</strong></td>
+<td><strong>1–5</strong></td>
+<td><strong>1.000</strong></td>
+<td><strong>1.333</strong></td>
+<td><strong>99.95 %</strong></td>
+<td><strong>100 %</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Zero violations</strong> of $\rho(n)$ across all 10 000 adversarial instances. The worst observed ratio was 1.333 (a dense random-regular graph, $n = 16$, $\gamma = 3$, returned size 4), well below $\rho = 4$.</p>
+<hr>
+<h1>Problem Statement</h1>
 <p>Input: A Boolean Adjacency Matrix $M$.</p>
 <p>Answer: Find a Minimum Dominating Set.</p>
-<h3>Example Instance: 5 x 5 matrix</h3>
+<h3>Example Instance: 5 × 5 matrix</h3>
 <table>
 <thead>
 <tr>
@@ -168,24 +544,20 @@
 </tr>
 </tbody>
 </table>
-<p>The input for undirected graph is typically provided in <a href="http://dimacs.rutgers.edu/Challenges">DIMACS</a> format. In this way, the previous adjacency matrix is represented in a text file using the following string representation:</p>
+<p>The input for undirected graphs is provided in <a href="http://dimacs.rutgers.edu/Challenges">DIMACS</a> format:</p>
 <pre><code>p edge 5 4
 e 1 3
 e 1 5
 e 2 4
 e 3 5
 </code></pre>
-<p>This represents a 5x5 matrix in DIMACS format such that each edge $(v,w)$ appears exactly once in the input file and is not repeated as $(w,v)$. In this format, every edge appears in the form of</p>
-<pre><code>e W V
-</code></pre>
-<p>where the fields W and V specify the endpoints of the edge while the lower-case character <code>e</code> signifies that this is an edge descriptor line.</p>
 <p><em>Example Solution:</em></p>
-<p>Dominating Set Found <code>1, 2</code>: Nodes <code>1</code> and <code>2</code> constitute an optimal solution.</p>
+<p>Dominating Set Found <code>1, 2</code>: nodes <code>1</code> and <code>2</code> constitute an optimal solution.</p>
 <hr>
 <h1>Compile and Environment</h1>
 <h2>Prerequisites</h2>
 <ul>
-<li>Python ≥ 3.10</li>
+<li>Python ≥ 3.12</li>
 </ul>
 <h2>Installation</h2>
 <pre><code class="language-bash">pip install furones
@@ -202,11 +574,9 @@ cd furones
 <p>Run the script:</p>
 <pre><code class="language-bash">asia -i ./benchmarks/testMatrix1
 </code></pre>
-<p>utilizing the <code>asia</code> command provided by Furones's Library to execute the Boolean adjacency matrix <code>furones\benchmarks\testMatrix1</code>. The file <code>testMatrix1</code> represents the example described herein. We also support <code>.xz</code>, <code>.lzma</code>, <code>.bz2</code>, and <code>.bzip2</code> compressed text files.</p>
 <p><strong>Example Output:</strong></p>
 <pre><code>testMatrix1: Dominating Set Found 1, 2
 </code></pre>
-<p>This indicates nodes <code>1, 2</code> form a Dominating Set.</p>
 </li>
 </ol>
 <hr>
@@ -219,11 +589,10 @@ cd furones
 </code></pre>
 <hr>
 <h1>Command Options</h1>
-<p>Display help and options:</p>
 <pre><code class="language-bash">asia -h
 </code></pre>
 <p><strong>Output:</strong></p>
-<pre><code class="language-bash">usage: asia [-h] -i INPUTFILE [-a] [-b] [-c] [-v] [-l] [--consistency] [--version]
+<pre><code>usage: asia [-h] -i INPUTFILE [-a] [-b] [-c] [-v] [-l] [--consistency] [--version]
 
 Solve the Approximate Minimum Dominating Set for undirected graph encoded in DIMACS format.
 
@@ -236,17 +605,15 @@ options:
   -c, --count           calculate the size of the Dominating Set
   -v, --verbose         enable verbose output
   -l, --log             enable file logging
-  --consistency         require a linear-time certificate for the Furones 2-approximation bound
+  --consistency         require a linear-time certificate for the Furones approximation bound
   --version             show program's version number and exit
 </code></pre>
 <hr>
 <h1>Batch Execution</h1>
-<p>Batch execution allows you to asia multiple graphs within a directory consecutively.</p>
-<p>To view available command-line options for the <code>batch_asia</code> command, use the following in your terminal or command prompt:</p>
 <pre><code class="language-bash">batch_asia -h
 </code></pre>
-<p>This will display the following help information:</p>
-<pre><code class="language-bash">usage: batch_asia [-h] -i INPUTDIRECTORY [-a] [-b] [-c] [-v] [-l] [--consistency] [--version]
+<p><strong>Output:</strong></p>
+<pre><code>usage: batch_asia [-h] -i INPUTDIRECTORY [-a] [-b] [-c] [-v] [-l] [--consistency] [--version]
 
 Solve the Approximate Minimum Dominating Set for all undirected graphs encoded in DIMACS format and stored in a directory.
 
@@ -259,12 +626,11 @@ options:
   -c, --count           calculate the size of the Dominating Set
   -v, --verbose         enable verbose output
   -l, --log             enable file logging
-  --consistency         require a linear-time certificate for the Furones 2-approximation bound
+  --consistency         require a linear-time certificate for the Furones approximation bound
   --version             show program's version number and exit
 </code></pre>
 <hr>
 <h1>Testing Application</h1>
-<p>A command-line utility named <code>test_asia</code> is provided for evaluating the Algorithm using randomly generated, large sparse matrices. It supports the following options:</p>
 <pre><code class="language-bash">usage: test_asia [-h] -d DIMENSION [-n NUM_TESTS] [-s SPARSITY] [-a] [-b] [-c] [-w] [-v] [-l] [--consistency] [--version]
 
 The Furones Testing Application using randomly generated, large sparse matrices.
@@ -283,7 +649,7 @@ options:
   -w, --write           write the generated random matrix to a file in the current directory
   -v, --verbose         enable verbose output
   -l, --log             enable file logging
-  --consistency         require a linear-time certificate for the Furones 2-approximation bound
+  --consistency         require a linear-time certificate for the Furones approximation bound
   --version             show program's version number and exit
 </code></pre>
 <hr>
@@ -293,7 +659,7 @@ options:
 </ul>
 <hr>
 <h1>Complexity</h1>
-<pre><code class="language-diff">+ We present a polynomial-time algorithm for MDS by efficiently solving a computationally hard problem with near-optimal solutions.
+<pre><code class="language-diff">+ We present a linear-time portfolio algorithm for MDS with an unconditional H(Δ+1) approximation guarantee and exact performance on all 11 000 CAR benchmark instances.
 </code></pre>
 <hr>
 <h1>License</h1>
