@@ -96,7 +96,8 @@ def greedy_closed_degree_dominating_set(G: nx.Graph) -> Set[Any]:
 
 def greedy_max_coverage_dominating_set(G: nx.Graph) -> Set[Any]:
     """
-    Build a dominating-set candidate by the dynamic greedy maximum-coverage rule.
+    Build a dominating-set candidate by the dynamic greedy maximum-coverage rule
+    in linear time.
 
     Unlike :func:`greedy_closed_degree_dominating_set`, which fixes the scan
     order once by initial closed degree, this routine re-evaluates coverage
@@ -107,35 +108,64 @@ def greedy_max_coverage_dominating_set(G: nx.Graph) -> Set[Any]:
     H(Δ + 1) = (1 + ln(Δ + 1)) approximation guarantee for Dominating Set
     (Johnson; Lovász; Chvátal), where Δ is the maximum degree.
 
-    As with every Furones candidate, the result is pruned and validated on the
-    original graph before it can be selected.  A bucket-priority-queue variant
-    runs in O(n + m); this direct version keeps an incrementally updated gain
-    map and is adequate for the candidate portfolio.
-
-    Reference implementation: ``greedy_dominating`` in
-    ``car/run_high_degree_experiment.py``.
+    The maximum-gain vertex is found with a bucket priority queue keyed by the
+    current coverage gain (an integer in [0, Δ + 1]), using lazy deletion: when
+    a vertex's gain drops, a fresh copy is pushed into the lower bucket and the
+    stale copy is discarded when later popped.  Each closed-neighbourhood
+    incidence triggers at most one push and one pop, and the top-bucket pointer
+    only moves downward, so the routine runs in O(n + m) time and O(n + m)
+    space.  As with every Furones candidate, the result is pruned and validated
+    on the original graph before it can be selected.
     """
     n = G.number_of_nodes()
     if n == 0:
         return set()
 
-    # gain[v] = |N[v] ∩ undominated|, maintained incrementally.
+    # gain[v] = |N[v] ∩ undominated|, an integer in [0, Δ + 1].
     gain: Dict[Any, int] = {v: G.degree(v) + 1 for v in G.nodes()}
+    max_gain = max(gain.values())
+
+    # Bucket priority queue with lazy deletion: buckets[g] holds vertices whose
+    # gain was g when they were (re)inserted; stale entries are filtered on pop.
+    buckets: List[List[Any]] = [[] for _ in range(max_gain + 1)]
+    for v in G.nodes():
+        buckets[gain[v]].append(v)
+
     undominated: Set[Any] = set(G.nodes())
+    selected: Set[Any] = set()
     D: Set[Any] = set()
+    top = max_gain
 
     while undominated:
-        # Vertex of maximum current gain; ties broken by node iteration order,
-        # which is deterministic for a fixed input graph.
-        s = max(G.nodes(), key=lambda v: gain[v])
+        # Pop the next vertex whose recorded gain is still current.
+        s: Optional[Any] = None
+        while top >= 1:
+            bucket = buckets[top]
+            while bucket:
+                cand = bucket.pop()
+                if cand in selected or gain[cand] != top:
+                    continue  # stale copy or already-selected vertex
+                s = cand
+                break
+            if s is not None:
+                break
+            top -= 1
+        if s is None:
+            break  # no positive-gain vertex remains (impossible while undominated)
+
+        selected.add(s)
         D.add(s)
         # Every vertex newly covered by s stops contributing to its neighbours'
-        # gains.
+        # gains; push a fresh copy for each decremented vertex.
         newly = [w for w in _closed_neighborhood(G, s) if w in undominated]
         for w in newly:
             undominated.discard(w)
             for z in _closed_neighborhood(G, w):
+                if z in selected:
+                    continue
                 gain[z] -= 1
+                if gain[z] >= 1:
+                    buckets[gain[z]].append(z)
 
     return prune_redundant_vertices_dominating(G, D)
 
@@ -818,7 +848,7 @@ def is_two_approximation_certified(
 
 def find_dominating_set(graph, eps=1, consistency=False):
     """
-    Compute a Furones v0.3.5 dominating set of an undirected graph.
+    Compute a Furones v0.3.6 dominating set of an undirected graph.
 
     The algorithm combines structural reductions with Baker's PTAS for planar graphs
     and linear original-graph sweeps on the original working graph.
