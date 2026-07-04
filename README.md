@@ -28,23 +28,27 @@ A **dominating set** in a graph $G = (V, E)$ is a subset $D \subseteq V$ such th
 
 # The Furones Algorithm
 
-Furones v0.3.7 is a **linear-time candidate-comparison solver** for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one. The pipeline consists of:
+Furones v0.3.8 is a **linear-time candidate-comparison solver** for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one.
+
+> **New in v0.3.8**: a **max-cut double-cover candidate** ($C_X$) — it computes an exact min-side maximum cut of the bipartite double cover of the working graph and decodes it into a validated dominating-set candidate (see below). The pseudocode, gadget, correctness, and runtime are documented in the manuscript.
+
+The pipeline consists of:
 
 1. **Preprocessing**: self-loop removal, isolated-vertex separation.
 2. **TSCC-style pendant cascade** (`ReduceToTSCCForDS`): iteratively commits pendant supports and isolated vertices to a forced set $F$, producing a reduced residual.
-3. **Forest projection** (if the residual is non-planar): projects onto a spanning forest before solving.
-4. **Baker-style planar PTAS** on the residual: solves MDS on $k$-outerplanar components by tree-decomposition DP.
-5. **Lifted candidate** $C_L = F \cup \ell(D_R)$: lifts the reduced solution back to original labels.
-6. **Original-graph linear candidates** (all computed in $\mathcal{O}(n+m)$):
+3. **Baker-style reduced solve** on the residual (treated as planar by construction): used only as a *validated candidate generator* — its output enters the pool and is admitted only after passing the domination check; none of the unconditional guarantees depend on it.
+4. **Lifted candidate** $C_L = F \cup \ell(D_R)$: lifts the reduced solution back to original labels.
+5. **Original-graph linear candidates** (all computed in $\mathcal{O}(n+m)$):
    - $C_G$ — **greedy maximum-coverage** (certifies the $H(\Delta+1)$ ratio)
    - $C_D$ — closed-degree coverage sweep
    - $C_W$, $C_M$ — low- and medium-degree witness sweeps
    - $C_O$ — order-ownership candidates (early and late)
    - $C_S$ — seed-and-complete
    - $C_B$ — Salvador-style bipartite auxiliary
+   - $C_X$ — **max-cut double-cover** (min-side maximum cut of the bipartite double cover $B(H)$, decoded by first coordinate; validated)
    - $C_R$ — reverse-delete (multiple deterministic orders)
-7. **Pruning** (`PruneRedundantDominating`): each candidate is made inclusion-minimal.
-8. **Portfolio minimum**: the smallest valid (dominates the original graph) pruned candidate is returned.
+6. **Pruning** (`PruneRedundantDominating`): each candidate is made inclusion-minimal.
+7. **Portfolio minimum**: the smallest valid (dominates the original graph) pruned candidate is returned.
 
 ### Unconditional guarantees
 
@@ -58,7 +62,7 @@ Furones is conjectured to satisfy $|D| \le \max\\{4,\,\frac{1}{2}\ln n\\}\cdot\g
 
 ### Runtime
 
-$\mathcal{O}(n+m)$ for fixed parameters (large hidden constant; grows as $2^{\mathcal{O}(1/\varepsilon)}$ on the Baker branch).
+$\mathcal{O}(n+m)$ for fixed parameters (large hidden constant). The Baker reduced-solve uses the default $\varepsilon = 1$ (shift $k = 1$), a constant factor; the max-cut double-cover candidate $C_X$ is also $\mathcal{O}(n+m)$ (build the double cover with $2n$ nodes and $2m$ edges, then one BFS min-side cut).
 
 ---
 
@@ -95,11 +99,12 @@ Each exposed strategy is measured independently on the same 1 000-instance bench
 | Reverse delete, low-degree | 100.0 % | 88.7 % | 1.049 | 2.500 |
 | Medium-degree witnesses | 100.0 % | 88.3 % | 1.054 | 2.500 |
 | TSCC/Baker/lift | 100.0 % | 87.8 % | 1.052 | 2.000 |
-| Salvador auxiliary | 100.0 % | 85.4 % | 1.107 | 5.000 |
+| Salvador auxiliary | 100.0 % | 84.9 % | 1.107 | 5.000 |
 | Low-degree witnesses | 100.0 % | 84.8 % | 1.080 | 3.000 |
 | Order ownership, late | 79.2 % | 65.8 % | 1.060 | 2.000 |
 | Order ownership, early | 79.2 % | 64.5 % | 1.065 | 2.000 |
 | Reverse delete, reverse | 100.0 % | 61.2 % | 1.176 | 3.500 |
+| **Max-cut double cover ($C_X$)** | 100.0 % | 58.4 % | 1.217 | 5.000 |
 | Reverse delete, input order | 100.0 % | 57.9 % | 1.241 | 5.000 |
 | Reverse delete, high-degree | 100.0 % | 27.9 % | 1.428 | 5.000 |
 
@@ -316,7 +321,7 @@ options:
 # Complexity
 
 ```diff
-+ We present a linear-time portfolio algorithm for MDS with an unconditional H(Δ+1) approximation guarantee and exact performance on all 11 000 CAR benchmark instances.
++ We present a linear-time portfolio algorithm for MDS with an unconditional H(Δ+1) approximation guarantee and exact performance across the CAR benchmarks: optimal on all 1 000 core and 1 000 high-degree instances, and zero factor-4 violations across 10 000 adversarial instances.
 ```
 
 ---

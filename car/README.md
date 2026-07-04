@@ -1,6 +1,6 @@
 # Furones CAR Artifacts
 
-This folder follows the Gauge Freedom Journal template convention: CAR material is
+This folder follows the journal CAR template convention: CAR material is
 kept in a top-level `car/` directory and referenced from the manuscript
 declarations.
 
@@ -12,7 +12,7 @@ tables, and the rerun scripts used to generate the artifacts.
 
 Every CAR experiment runs against the public release, so install it first:
 
-    pip install furones        # v0.3.6 or later
+    pip install furones        # v0.3.8 or later
     python run_integrity_measurements.py     # CAR-001 + CAR-002
     python run_high_degree_experiment.py     # CAR-003
     python run_adversarial_experiment.py     # CAR-004
@@ -24,13 +24,13 @@ files.
 
 ## Files
 
-- `CAR.furones-v0.3.6.json`: submission-facing CAR manifest in the style of the
+- `CAR.furones-v0.3.8.json`: submission-facing CAR manifest in the style of the
   journal template.
 - `CAR-001-ratio-constant.json`: 1000-instance exact-benchmark ratio-constant
   measurement.
 - `CAR-002-strategy-ablation.json`: per-strategy candidate-size and
   min-attainment measurement (includes the dynamic greedy maximum-coverage
-  candidate).
+  candidate and the v0.3.8 max-cut double-cover candidate).
 - `run_high_degree_experiment.py` / `CAR-003-high-degree.json`: high-degree /
   dense-regime experiment probing `Delta > sqrt(n)/e`, including perfect-code
   stress cases.
@@ -47,7 +47,7 @@ files.
 
 ## Scope
 
-These artifacts collect four exact-optimum CAR studies for Furones v0.3.6. In
+These artifacts collect four exact-optimum CAR studies for Furones v0.3.8. In
 every study the exact domination number is computed by exhaustive search before
 comparison, so each instance is checked against the true optimum.
 

@@ -1,20 +1,20 @@
 {
-  "id": "car:b43233cd04c24beaf0fdd7a221a26cbc81b5c17b1ec3f4d8cafaec40fe1470cc",
-  "run_id": "furones-v0.3.6-car-2026-06-23-1000-exact",
-  "created_at": "2026-06-26T06:37:09.305264+00:00",
+  "id": "car:fad167644f559e2f7cfcc5870b5e57022a374ea8735ec146d3669fc6541b8974",
+  "run_id": "furones-v0.3.8-car-2026-06-23-1000-exact",
+  "created_at": "2026-07-03T20:18:35.691113+00:00",
   "run": {
     "kind": "measurement",
-    "name": "Furones v0.3.6 1000-instance exact small-graph CAR benchmark",
-    "model": "ChatGPT-assisted design (CAR-001/002); Claude v0.3.6 update",
-    "version": "furones-0.3.6",
+    "name": "Furones v0.3.8 1000-instance exact small-graph CAR benchmark",
+    "model": "scripted exact measurement against pip-installed furones",
+    "version": "furones-0.3.8",
     "seed": 20260622,
     "steps": [
       {
         "id": "step-1",
-        "run_id": "furones-v0.3.6-car-2026-06-23-1000-exact",
+        "run_id": "furones-v0.3.8-car-2026-06-23-1000-exact",
         "order_index": 1,
         "checkpoint_type": "scripted-exact-measurement",
-        "model": "ChatGPT-assisted Codex session",
+        "model": "scripted exact measurement against pip-installed furones",
         "prompt": "Measure Furones on 1000 small instances with exact domination numbers, compare ratios, and measure each strategy's candidate size and percent wins.",
         "token_budget": null,
         "proof_mode": "replayable-local-run-with-exhaustive-optima"
@@ -32,7 +32,7 @@
     "scope_warning": "Finite exact benchmark evidence only; not a proof of a universal constant approximation ratio."
   },
   "policy_ref": {
-    "hash": "sha256:3eb7572051c7d64d161de1832ed3cff7f62309adffced285e187ae3c0aaf8dff",
+    "hash": "sha256:6eabcf3d00d87ccb6f04a8258c2791da0176f83d2b3f21f7df8d65e89d8f020d",
     "egress": false,
     "estimator": "local-scripted-exhaustive-measurement"
   },
@@ -45,22 +45,22 @@
     {
       "claim_type": "CAR-001-ratio-constant",
       "path": "car/CAR-001-ratio-constant.json",
-      "sha256": "sha256:b43233cd04c24beaf0fdd7a221a26cbc81b5c17b1ec3f4d8cafaec40fe1470cc"
+      "sha256": "sha256:fad167644f559e2f7cfcc5870b5e57022a374ea8735ec146d3669fc6541b8974"
     },
     {
       "claim_type": "CAR-002-strategy-ablation",
       "path": "car/CAR-002-strategy-ablation.json",
-      "sha256": "sha256:ba8137b3aa23faa2f317f7be18ca408f0143011e1d1832881d1052d614ec7275"
+      "sha256": "sha256:6808b33202a4a2f2e53434977d1b2288634b8b4be153a0ee1b915e73050270c4"
     },
     {
       "claim_type": "INTEGRITY-REPORT",
       "path": "car/INTEGRITY_REPORT.md",
-      "sha256": "sha256:3eb7572051c7d64d161de1832ed3cff7f62309adffced285e187ae3c0aaf8dff"
+      "sha256": "sha256:6eabcf3d00d87ccb6f04a8258c2791da0176f83d2b3f21f7df8d65e89d8f020d"
     },
     {
       "claim_type": "car-benchmark-cases",
       "path": "car/car_benchmark_cases.csv",
-      "sha256": "sha256:eadff05fd54e6adc61660ee2bbdb92183210bdd3567974c8ba31df29f8957d87"
+      "sha256": "sha256:f456fdf0c5c238fdb8bdc3e3c3e46bd0152789c60f4950ad1e283cbd55282390"
     },
     {
       "claim_type": "family-summary",
@@ -70,21 +70,21 @@
     {
       "claim_type": "strategy-ablation-by-instance",
       "path": "car/strategy_ablation_by_instance.csv",
-      "sha256": "sha256:ad6a6f44b20bfb6b330df8548f2ab36213059948d5576a2c25a7ec9e2268ea6c"
+      "sha256": "sha256:2b1ede3c88e27d280a918850f13adbc550aeded9e2d2fe237ca2296e14c7d42d"
     },
     {
       "claim_type": "strategy-ablation-summary",
       "path": "car/strategy_ablation_summary.csv",
-      "sha256": "sha256:d5b302a83992237c9957bbda8c625f725ca8d06e8f5a6ca56b7de772095d60fa"
+      "sha256": "sha256:d5ef6ca7d6372dbee58b06fba3e156e8edcfdf83571793daadf76e01f1bd7551"
     },
     {
       "claim_type": "run-integrity-measurements",
       "path": "car/run_integrity_measurements.py",
-      "sha256": "sha256:2a9068e3f4539740057ce27890d2ce245265828bf35c9344e859655729fa8a80"
+      "sha256": "sha256:707d7dd75d062a810784c4ad949f48b7a53d1ce03ca062c65cdd15a28de26133"
     }
   ],
   "checkpoints": [
-    "ckpt:furones-v0.3.6-car-2026-06-23-1000-exact:step-1"
+    "ckpt:furones-v0.3.8-car-2026-06-23-1000-exact:step-1"
   ],
   "sgrade": {
     "score": null,

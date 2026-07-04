@@ -53,12 +53,15 @@
 </ul>
 <hr>
 <h1>The Furones Algorithm</h1>
-<p>Furones v0.3.7 is a <strong>linear-time candidate-comparison solver</strong> for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one. The pipeline consists of:</p>
+<p>Furones v0.3.8 is a <strong>linear-time candidate-comparison solver</strong> for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one.</p>
+<blockquote>
+<p><strong>New in v0.3.8</strong>: a <strong>max-cut double-cover candidate</strong> ($C_X$) — it computes an exact min-side maximum cut of the bipartite double cover $B(H)$ of the working graph and decodes it (by first coordinate) into a validated dominating-set candidate. The pseudocode, gadget, correctness, and $\mathcal{O}(n+m)$ runtime are documented in the manuscript.</p>
+</blockquote>
+<p>The pipeline consists of:</p>
 <ol>
 <li><strong>Preprocessing</strong>: self-loop removal, isolated-vertex separation.</li>
 <li><strong>TSCC-style pendant cascade</strong> (<code>ReduceToTSCCForDS</code>): iteratively commits pendant supports and isolated vertices to a forced set $F$, producing a reduced residual.</li>
-<li><strong>Forest projection</strong> (if the residual is non-planar): projects onto a spanning forest before solving.</li>
-<li><strong>Baker-style planar PTAS</strong> on the residual: solves MDS on $k$-outerplanar components by tree-decomposition DP.</li>
+<li><strong>Baker-style reduced solve</strong> on the residual (treated as planar by construction): used only as a <em>validated candidate generator</em> — its output enters the pool and is admitted only after passing the domination check; none of the unconditional guarantees depend on it.</li>
 <li><strong>Lifted candidate</strong> $C_L = F \cup \ell(D_R)$: lifts the reduced solution back to original labels.</li>
 <li><strong>Original-graph linear candidates</strong> (all computed in $\mathcal{O}(n+m)$):
 <ul>
@@ -68,6 +71,7 @@
 <li>$C_O$ — order-ownership candidates (early and late)</li>
 <li>$C_S$ — seed-and-complete</li>
 <li>$C_B$ — Salvador-style bipartite auxiliary</li>
+<li>$C_X$ — <strong>max-cut double-cover</strong> (min-side maximum cut of the bipartite double cover $B(H)$, decoded by first coordinate; validated)</li>
 <li>$C_R$ — reverse-delete (multiple deterministic orders)</li>
 </ul>
 </li>
@@ -83,7 +87,7 @@
 <h3>Near-threshold ratio hypothesis</h3>
 <p>Furones is conjectured to satisfy $|D| \le \max\{4,,\frac{1}{2}\ln n\}\cdot\gamma(G)$ on every graph. Proving this for all graphs would imply <strong>P = NP</strong> (via Dinur–Steurer). The hypothesis is already proved unconditionally for all graphs of maximum degree $\Delta \le \sqrt{n}/e$.</p>
 <h3>Runtime</h3>
-<p>$\mathcal{O}(n+m)$ for fixed parameters (large hidden constant; grows as $2^{\mathcal{O}(1/\varepsilon)}$ on the Baker branch).</p>
+<p>$\mathcal{O}(n+m)$ for fixed parameters (large hidden constant). The Baker reduced-solve uses the default $\varepsilon = 1$ (shift $k = 1$), a constant factor; the max-cut double-cover candidate $C_X$ is also $\mathcal{O}(n+m)$ (build the double cover with $2n$ nodes and $2m$ edges, then one BFS min-side cut).</p>
 <hr>
 <h1>CAR Benchmarks</h1>
 <p>The <code>car/</code> folder contains three reproducible exact-optimum studies. Every study imports the <strong>installed</strong> Furones package and compares it against the exact domination number $\gamma(G)$ computed by exhaustive search.</p>
@@ -238,7 +242,7 @@
 <tr>
 <td>Salvador auxiliary</td>
 <td>100.0 %</td>
-<td>85.4 %</td>
+<td>84.9 %</td>
 <td>1.107</td>
 <td>5.000</td>
 </tr>
@@ -269,6 +273,13 @@
 <td>61.2 %</td>
 <td>1.176</td>
 <td>3.500</td>
+</tr>
+<tr>
+<td>Max-cut double cover ($C_X$)</td>
+<td>100.0 %</td>
+<td>58.4 %</td>
+<td>1.217</td>
+<td>5.000</td>
 </tr>
 <tr>
 <td>Reverse delete, input order</td>
@@ -659,7 +670,7 @@ options:
 </ul>
 <hr>
 <h1>Complexity</h1>
-<pre><code class="language-diff">+ We present a linear-time portfolio algorithm for MDS with an unconditional H(Δ+1) approximation guarantee and exact performance on all 11 000 CAR benchmark instances.
+<pre><code class="language-diff">+ We present a linear-time portfolio algorithm for MDS with an unconditional H(Δ+1) approximation guarantee and exact performance across the CAR benchmarks: optimal on all 1 000 core and 1 000 high-degree instances, and zero factor-4 violations across 10 000 adversarial instances.
 </code></pre>
 <hr>
 <h1>License</h1>

@@ -12,7 +12,7 @@ Search for the WORST adversarial instances for the hypothesis
 by generating 10 000 small graphs that are deliberately designed to push the
 ratio  |D_furones| / gamma(G)  as high as possible, while staying small enough
 that the exact domination number gamma(G) is cheap to compute. The actual
-Furones solver (v0.3.6) is invoked on every instance and compared against the
+Furones solver (v0.3.8) is invoked on every instance and compared against the
 exact optimum.
 
 Why these instances are "adversarial but feasible"
@@ -53,7 +53,7 @@ regenerated exactly from (family, index, seed, n).
 
 Usage
 -----
-    pip install furones            # v0.3.6 already installed
+    pip install furones            # v0.3.8 already installed
     python run_adversarial_experiment.py [--instances 10000] [--seed 1000] [--max-n 16]
 
 Outputs (written, not committed here):
@@ -66,10 +66,47 @@ import csv
 import itertools
 import json
 import math
+import os
 import random
+import sys
 from datetime import datetime, timezone
 
 import networkx as nx
+
+
+def _ensure_furones_importable() -> None:
+    """Import the installed ``furones`` package, or fall back to a local checkout.
+
+    If ``pip install furones`` was not run, look for a source tree containing
+    ``furones/__init__.py`` via the ``FURONES_ROOT`` environment variable, by
+    walking up from this script, or at the default ``D:\\Work\\NP\\furones``.
+    """
+    try:
+        import furones  # noqa: F401
+        return
+    except ImportError:
+        pass
+    candidates = []
+    env = os.environ.get("FURONES_ROOT")
+    if env:
+        candidates.append(env)
+    d = os.path.dirname(os.path.abspath(__file__))
+    for _ in range(6):
+        candidates.append(d)
+        d = os.path.dirname(d)
+    candidates.append(r"D:\Work\NP\furones")
+    for root in candidates:
+        if root and os.path.isfile(os.path.join(root, "furones", "__init__.py")):
+            sys.path.insert(0, root)
+            return
+    raise ImportError(
+        "Could not import 'furones'. Run 'pip install furones', or set the "
+        "FURONES_ROOT environment variable to the local source checkout "
+        "(the directory that contains furones/__init__.py)."
+    )
+
+
+_ensure_furones_importable()
 
 from furones import __version__ as FURONES_VERSION
 from furones.algorithm import find_dominating_set

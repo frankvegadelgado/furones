@@ -6,6 +6,7 @@ import itertools
 import networkx as nx
 from . import tscc_ds_reduction
 from . import baker_algo
+from .maxcut import maxcut_bipartite_min_side_linear
 from collections import defaultdict
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
@@ -845,10 +846,17 @@ def is_two_approximation_certified(
     }
     return not forced_boundary or len(forced_ds) >= 2 * len(forced_boundary)
 
+def max_cut_bipartite(G: nx.Graph):
+    B = nx.Graph()
+    for u, v in G.edges():
+        B.add_edges_from([((u, 0), (v, 1)), ((u, 1), (v, 0))])
+    result = maxcut_bipartite_min_side_linear(B, minimize_side=1)
+    D = {u for u, _ in result["side_1"]}
+    return D
 
 def find_dominating_set(graph, eps=1, consistency=False):
     """
-    Compute a Furones v0.3.7 dominating set of an undirected graph.
+    Compute a Furones v0.3.8 dominating set of an undirected graph.
 
     The algorithm combines structural reductions with Baker's PTAS for planar graphs
     and linear original-graph sweeps on the original working graph.
@@ -944,6 +952,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
     early_seed = seed_and_complete_dominating_set(working_graph)
     early_salvador = salvador_planar_bipartite_baker_candidate(working_graph, eps=eps)
     early_rd_reverse = reverse_delete_dominating_set(working_graph, "reverse_input")
+    early_max_cut = max_cut_bipartite(working_graph)
     early_candidate = _choose_best_valid_candidate(
         working_graph,
         early_sweep,
@@ -955,6 +964,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
         early_seed,
         early_salvador,
         early_rd_reverse,
+        early_max_cut,
     )
     if len(early_candidate) <= 2:
         early_candidate.update(isolates)
@@ -1048,6 +1058,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
         early_salvador,
         early_rd_input,
         early_rd_reverse,
+        early_max_cut,
         early_rd_high,
         early_rd_low,
     )

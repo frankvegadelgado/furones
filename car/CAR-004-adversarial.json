@@ -1,10 +1,10 @@
 {
   "car_id": "CAR-004-adversarial",
   "title": "Adversarial worst-case stress test of the near-threshold ratio hypothesis",
-  "generated": "2026-06-26T06:37:51.572552+00:00",
+  "generated": "2026-07-03T20:19:54.641118+00:00",
   "base_seed": 1000,
   "instances_requested": 10000,
-  "solver": "furones.algorithm.find_dominating_set (v0.3.6, full portfolio)",
+  "solver": "furones.algorithm.find_dominating_set (v0.3.8, full portfolio)",
   "rho_definition": "rho(n) = max(4, 0.5 * ln n)",
   "binding_bound_note": "All feasible instance sizes have 0.5*ln(n) < 4, so the binding bound is the constant floor rho = 4; this run stress-tests that floor.",
   "objective": "maximize the observed ratio |D_furones| / gamma(G) over adversarial families",

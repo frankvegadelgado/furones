@@ -15,6 +15,8 @@ $generated = @(
     "CAR.furones-v0.3.4.json",
     "CAR.furones-v0.3.5.json",
     "CAR.furones-v0.3.6.json",
+    "CAR.furones-v0.3.7.json",
+    "CAR.furones-v0.3.8.json",
     "car_benchmark_cases.csv",
     "family_summary.csv",
     "strategy_ablation_by_instance.csv",

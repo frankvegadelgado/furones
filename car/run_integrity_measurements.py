@@ -1,6 +1,7 @@
-"""Generate Furones v0.3.6 CAR-style exact benchmark measurements.
+"""Generate Furones v0.3.8 CAR-style exact benchmark measurements.
 
-This script imports the installed Furones package, builds a deterministic
+This script imports Furones (the installed package, or a local source checkout
+via FURONES_ROOT if pip install was not run), builds a deterministic
 1000-instance benchmark of small graphs, computes the exact domination number
 for every instance by exhaustive search, compares Furones against the optimum,
 and runs each exposed strategy as a candidate ablation.
@@ -23,10 +24,44 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-# This script requires the public Furones release to be installed first:
-#     pip install furones        # v0.3.6 or later
-# The installed package is imported directly (no local source tree on sys.path).
+# Prefer the pip-installed Furones package; fall back to a local source checkout
+# (set FURONES_ROOT, or run this script from inside the repository) if it is absent.
 import networkx as nx
+
+
+def _ensure_furones_importable() -> None:
+    """Import the installed ``furones`` package, or fall back to a local checkout.
+
+    If ``pip install furones`` was not run, look for a source tree containing
+    ``furones/__init__.py`` via the ``FURONES_ROOT`` environment variable, by
+    walking up from this script, or at the default ``D:\\Work\\NP\\furones``.
+    """
+    try:
+        import furones  # noqa: F401
+        return
+    except ImportError:
+        pass
+    candidates = []
+    env = os.environ.get("FURONES_ROOT")
+    if env:
+        candidates.append(env)
+    d = os.path.dirname(os.path.abspath(__file__))
+    for _ in range(6):
+        candidates.append(d)
+        d = os.path.dirname(d)
+    candidates.append(r"D:\Work\NP\furones")
+    for root in candidates:
+        if root and os.path.isfile(os.path.join(root, "furones", "__init__.py")):
+            sys.path.insert(0, root)
+            return
+    raise ImportError(
+        "Could not import 'furones'. Run 'pip install furones', or set the "
+        "FURONES_ROOT environment variable to the local source checkout "
+        "(the directory that contains furones/__init__.py)."
+    )
+
+
+_ensure_furones_importable()
 
 from furones import __version__ as FURONES_VERSION
 from furones import baker_algo, tscc_ds_reduction
@@ -35,6 +70,7 @@ from furones.algorithm import (
     greedy_closed_degree_dominating_set,
     greedy_max_coverage_dominating_set,
     low_degree_witness_dominating_set,
+    max_cut_bipartite,
     medium_degree_witness_dominating_set,
     order_ownership_witness_dominating_set,
     prune_redundant_vertices_dominating,
@@ -313,6 +349,7 @@ STRATEGIES: list[tuple[str, CandidateFn]] = [
     ("order_ownership_early", lambda G: order_ownership_witness_dominating_set(G, "early")),
     ("seed_and_complete", seed_and_complete_dominating_set),
     ("salvador_auxiliary", salvador_planar_bipartite_baker_candidate),
+    ("max_cut_double_cover", max_cut_bipartite),
     ("reverse_delete_input", lambda G: reverse_delete_dominating_set(G, "input")),
     ("reverse_delete_reverse", lambda G: reverse_delete_dominating_set(G, "reverse_input")),
     ("reverse_delete_high_degree", lambda G: reverse_delete_dominating_set(G, "high_degree")),
@@ -517,9 +554,9 @@ def run_measurements() -> tuple[
     metadata = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "tooling": "Reproducible measurement script executed against the installed Furones package (pip install furones).",
-        "furones_root": "pip-installed Furones package (pip install furones)",
+        "furones_root": os.path.dirname(os.path.dirname(os.path.abspath(baker_algo.__file__))),
         "furones_version_imported": FURONES_VERSION,
-        "benchmark_name": "furones_v0_3_6_car_1000_exact_small_graphs",
+        "benchmark_name": "furones_v0_3_8_car_1000_exact_small_graphs",
         "benchmark_seed": BENCHMARK_SEED,
         "benchmark_scope": "Deterministic 1000-instance benchmark of small graphs with exact optima found by exhaustive search; finite evidence only, not a universal approximation proof.",
         "instances": total_cases,
@@ -623,14 +660,14 @@ def write_report(
         }
         for row in family_rows
     ]
-    report = f"""# Furones v0.3.6 Integrity Report
+    report = f"""# Furones v0.3.8 Integrity Report
 
 Generated: {metadata["generated_at_utc"]}
 
 This is a human-readable Integrity Report prepared for Gauge Freedom Journal's
 AI-assistance/CAR expectation. It documents the exact-optimum measurement run
 against the installed Furones package; reproduce it with `pip install furones`
-(v0.3.6) followed by this script.
+(v0.3.8) followed by this script.
 
 CAR-001 and CAR-002 below are produced by this script; CAR-003 and CAR-004 are
 companion studies produced by `run_high_degree_experiment.py` and
@@ -729,7 +766,7 @@ percentages need not sum to 100.
 
 All four CAR studies are reproduced against the public Furones release:
 
-    pip install furones        # v0.3.6 or later
+    pip install furones        # v0.3.8 or later
     python run_integrity_measurements.py
     python run_high_degree_experiment.py
     python run_adversarial_experiment.py
@@ -741,7 +778,7 @@ responsible for any manuscript claims.
 
 ## Files
 
-- `CAR.furones-v0.3.6.json`
+- `CAR.furones-v0.3.8.json`
 - `CAR-001-ratio-constant.json`
 - `CAR-002-strategy-ablation.json`
 - `CAR-003-high-degree.json`
@@ -790,18 +827,18 @@ def write_manifest(metadata: dict[str, Any]) -> None:
         )
     manifest = {
         "id": f"car:{sha256_file(OUT_DIR / 'CAR-001-ratio-constant.json')}",
-        "run_id": "furones-v0.3.6-car-2026-06-23-1000-exact",
+        "run_id": "furones-v0.3.8-car-2026-06-23-1000-exact",
         "created_at": metadata["generated_at_utc"],
         "run": {
             "kind": "measurement",
-            "name": "Furones v0.3.6 1000-instance exact small-graph CAR benchmark",
+            "name": "Furones v0.3.8 1000-instance exact small-graph CAR benchmark",
             "model": "scripted exact measurement against pip-installed furones",
             "version": f"furones-{metadata['furones_version_imported']}",
             "seed": metadata["benchmark_seed"],
             "steps": [
                 {
                     "id": "step-1",
-                    "run_id": "furones-v0.3.6-car-2026-06-23-1000-exact",
+                    "run_id": "furones-v0.3.8-car-2026-06-23-1000-exact",
                     "order_index": 1,
                     "checkpoint_type": "scripted-exact-measurement",
                     "model": "scripted exact measurement against pip-installed furones",
@@ -824,7 +861,7 @@ def write_manifest(metadata: dict[str, Any]) -> None:
         },
         "budgets": {"usd": None, "tokens": None, "nature_cost": None},
         "provenance": provenance,
-        "checkpoints": ["ckpt:furones-v0.3.6-car-2026-06-23-1000-exact:step-1"],
+        "checkpoints": ["ckpt:furones-v0.3.8-car-2026-06-23-1000-exact:step-1"],
         "sgrade": {
             "score": None,
             "components": {
@@ -838,7 +875,7 @@ def write_manifest(metadata: dict[str, Any]) -> None:
         "signer_public_key": None,
         "signatures": [],
     }
-    (OUT_DIR / "CAR.furones-v0.3.6.json").write_text(
+    (OUT_DIR / "CAR.furones-v0.3.8.json").write_text(
         json.dumps(manifest, indent=2) + "\n",
         encoding="utf-8",
     )
