@@ -1,17 +1,17 @@
 {
-  "id": "car:fad167644f559e2f7cfcc5870b5e57022a374ea8735ec146d3669fc6541b8974",
-  "run_id": "furones-v0.3.8-car-2026-06-23-1000-exact",
-  "created_at": "2026-07-03T20:18:35.691113+00:00",
+  "id": "car:a1160d1a7bd5860dde39b0b957c2627c5ffbf99c3e59bf9b34dabc5837a352b4",
+  "run_id": "furones-v0.3.9-car-2026-06-23-1000-exact",
+  "created_at": "2026-09-14T21:17:40.967078+00:00",
   "run": {
     "kind": "measurement",
-    "name": "Furones v0.3.8 1000-instance exact small-graph CAR benchmark",
+    "name": "Furones v0.3.9 1000-instance exact small-graph CAR benchmark",
     "model": "scripted exact measurement against pip-installed furones",
-    "version": "furones-0.3.8",
+    "version": "furones-0.3.9",
     "seed": 20260622,
     "steps": [
       {
         "id": "step-1",
-        "run_id": "furones-v0.3.8-car-2026-06-23-1000-exact",
+        "run_id": "furones-v0.3.9-car-2026-06-23-1000-exact",
         "order_index": 1,
         "checkpoint_type": "scripted-exact-measurement",
         "model": "scripted exact measurement against pip-installed furones",
@@ -32,7 +32,7 @@
     "scope_warning": "Finite exact benchmark evidence only; not a proof of a universal constant approximation ratio."
   },
   "policy_ref": {
-    "hash": "sha256:6eabcf3d00d87ccb6f04a8258c2791da0176f83d2b3f21f7df8d65e89d8f020d",
+    "hash": "sha256:30a0f80678654b9465700feb060d508e7142a09962305da21ae1bc00f6f140d3",
     "egress": false,
     "estimator": "local-scripted-exhaustive-measurement"
   },
@@ -45,22 +45,22 @@
     {
       "claim_type": "CAR-001-ratio-constant",
       "path": "car/CAR-001-ratio-constant.json",
-      "sha256": "sha256:fad167644f559e2f7cfcc5870b5e57022a374ea8735ec146d3669fc6541b8974"
+      "sha256": "sha256:a1160d1a7bd5860dde39b0b957c2627c5ffbf99c3e59bf9b34dabc5837a352b4"
     },
     {
       "claim_type": "CAR-002-strategy-ablation",
       "path": "car/CAR-002-strategy-ablation.json",
-      "sha256": "sha256:6808b33202a4a2f2e53434977d1b2288634b8b4be153a0ee1b915e73050270c4"
+      "sha256": "sha256:a51c4a784e938cc9c41dc3b0d0a141ad670ad5577e147811d74e486464947a09"
     },
     {
       "claim_type": "INTEGRITY-REPORT",
       "path": "car/INTEGRITY_REPORT.md",
-      "sha256": "sha256:6eabcf3d00d87ccb6f04a8258c2791da0176f83d2b3f21f7df8d65e89d8f020d"
+      "sha256": "sha256:30a0f80678654b9465700feb060d508e7142a09962305da21ae1bc00f6f140d3"
     },
     {
       "claim_type": "car-benchmark-cases",
       "path": "car/car_benchmark_cases.csv",
-      "sha256": "sha256:f456fdf0c5c238fdb8bdc3e3c3e46bd0152789c60f4950ad1e283cbd55282390"
+      "sha256": "sha256:060e032c85e40863e5b5590d7b95cbdaaf8f13e005293aea01acef50ea452584"
     },
     {
       "claim_type": "family-summary",
@@ -70,21 +70,21 @@
     {
       "claim_type": "strategy-ablation-by-instance",
       "path": "car/strategy_ablation_by_instance.csv",
-      "sha256": "sha256:2b1ede3c88e27d280a918850f13adbc550aeded9e2d2fe237ca2296e14c7d42d"
+      "sha256": "sha256:f9d338aaad0f88f92f8d5fc95579ce56667600456eb88880a61ae6c91dcb8660"
     },
     {
       "claim_type": "strategy-ablation-summary",
       "path": "car/strategy_ablation_summary.csv",
-      "sha256": "sha256:d5ef6ca7d6372dbee58b06fba3e156e8edcfdf83571793daadf76e01f1bd7551"
+      "sha256": "sha256:229d4e5f20ad7b14ec56e342528434dc36a211ee7d39874045bf729dcee5408b"
     },
     {
       "claim_type": "run-integrity-measurements",
       "path": "car/run_integrity_measurements.py",
-      "sha256": "sha256:707d7dd75d062a810784c4ad949f48b7a53d1ce03ca062c65cdd15a28de26133"
+      "sha256": "sha256:e9005cda703f00f18b23dc507f8c70355065e207b082e003c54411967f237984"
     }
   ],
   "checkpoints": [
-    "ckpt:furones-v0.3.8-car-2026-06-23-1000-exact:step-1"
+    "ckpt:furones-v0.3.9-car-2026-06-23-1000-exact:step-1"
   ],
   "sgrade": {
     "score": null,

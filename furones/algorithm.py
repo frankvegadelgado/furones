@@ -817,6 +817,19 @@ def _choose_best_valid_candidate(G: nx.Graph, *candidates: Set[Any]) -> Set[Any]
             continue
         if best is None or len(D) < len(best):
             best = D
+        dom = set(D)
+        complement = set(G) - D
+        if complement:
+            v_max = max(complement, key=G.degree)
+            evaluation_pool = dom.union({v_max})
+        # Iterate over the guaranteed pool
+        for u in evaluation_pool:
+            candidate = (dom - {u}) | set(G.neighbors(u))
+            D = prune_redundant_vertices_dominating(G, candidate)
+            if not nx.is_dominating_set(G, D):
+                continue
+            if best is None or len(D) < len(best):
+                best = D
     if best is None:
         raise RuntimeError("No valid dominating-set candidate was produced.")
     return best
@@ -856,7 +869,7 @@ def max_cut_bipartite(G: nx.Graph):
 
 def find_dominating_set(graph, eps=1, consistency=False):
     """
-    Compute a Furones v0.3.8 dominating set of an undirected graph.
+    Compute a Furones v0.3.9 dominating set of an undirected graph.
 
     The algorithm combines structural reductions with Baker's PTAS for planar graphs
     and linear original-graph sweeps on the original working graph.

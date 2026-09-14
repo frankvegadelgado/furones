@@ -1,11 +1,11 @@
-# Furones v0.3.8 Integrity Report
+# Furones v0.3.9 Integrity Report
 
-Generated: 2026-07-03T20:18:35.691113+00:00
+Generated: 2026-09-14T21:17:40.967078+00:00
 
 This is a human-readable Integrity Report prepared for Gauge Freedom Journal's
 AI-assistance/CAR expectation. It documents the exact-optimum measurement run
 against the installed Furones package; reproduce it with `pip install furones`
-(v0.3.8) followed by this script.
+(v0.3.9) followed by this script.
 
 CAR-001 and CAR-002 below are produced by this script; CAR-003 and CAR-004 are
 companion studies produced by `run_high_degree_experiment.py` and
@@ -68,7 +68,7 @@ Median final ratio to optimum: `1.000`.
 | bipartite_002 | random_bipartite | 8 | 5 | 4 | 4 | 1.000 | 4 | closed_degree, low_degree_witness, medium_degree_witness, seed_and_complete, salvador_auxiliary, reverse_delete_low_degree, lifted_tscc_baker |
 | bipartite_003 | random_bipartite | 9 | 4 | 6 | 6 | 1.000 | 6 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_input, reverse_delete_reverse, reverse_delete_high_degree, reverse_delete_low_degree, lifted_tscc_baker |
 | bipartite_004 | random_bipartite | 10 | 7 | 4 | 4 | 1.000 | 4 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, order_ownership_late, order_ownership_early, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_input, reverse_delete_low_degree, lifted_tscc_baker |
-| bipartite_005 | random_bipartite | 7 | 9 | 2 | 2 | 1.000 | 2 | greedy_max_coverage, closed_degree, order_ownership_late, order_ownership_early, seed_and_complete, reverse_delete_low_degree |
+| bipartite_005 | random_bipartite | 7 | 9 | 2 | 2 | 1.000 | 2 | greedy_max_coverage, closed_degree, order_ownership_late, order_ownership_early, seed_and_complete, salvador_auxiliary, reverse_delete_low_degree |
 | bipartite_006 | random_bipartite | 8 | 3 | 5 | 5 | 1.000 | 5 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_input, reverse_delete_low_degree, lifted_tscc_baker |
 | bipartite_007 | random_bipartite | 9 | 6 | 4 | 4 | 1.000 | 4 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_input, reverse_delete_low_degree, lifted_tscc_baker |
 | bipartite_008 | random_bipartite | 10 | 6 | 6 | 6 | 1.000 | 6 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, order_ownership_late, order_ownership_early, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_reverse, reverse_delete_low_degree, lifted_tscc_baker |
@@ -80,7 +80,7 @@ Median final ratio to optimum: `1.000`.
 | bipartite_014 | random_bipartite | 12 | 13 | 5 | 5 | 1.000 | 5 | closed_degree, low_degree_witness, medium_degree_witness, order_ownership_late, order_ownership_early, seed_and_complete, salvador_auxiliary, reverse_delete_low_degree, lifted_tscc_baker |
 | bipartite_015 | random_bipartite | 9 | 10 | 3 | 3 | 1.000 | 3 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, order_ownership_late, order_ownership_early, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_reverse, reverse_delete_low_degree, lifted_tscc_baker |
 | bipartite_016 | random_bipartite | 10 | 13 | 3 | 3 | 1.000 | 3 | greedy_max_coverage, closed_degree, order_ownership_late, order_ownership_early, seed_and_complete, salvador_auxiliary, reverse_delete_low_degree, lifted_tscc_baker |
-| bipartite_017 | random_bipartite | 11 | 13 | 4 | 4 | 1.000 | 4 | greedy_max_coverage, closed_degree, order_ownership_late, order_ownership_early, seed_and_complete, salvador_auxiliary, lifted_tscc_baker |
+| bipartite_017 | random_bipartite | 11 | 13 | 4 | 4 | 1.000 | 4 | greedy_max_coverage, closed_degree, order_ownership_late, order_ownership_early, seed_and_complete, lifted_tscc_baker |
 | bipartite_018 | random_bipartite | 12 | 5 | 8 | 8 | 1.000 | 8 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_input, reverse_delete_reverse, reverse_delete_high_degree, reverse_delete_low_degree, lifted_tscc_baker |
 | bipartite_019 | random_bipartite | 13 | 8 | 7 | 7 | 1.000 | 7 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_input, reverse_delete_high_degree, reverse_delete_low_degree, lifted_tscc_baker |
 
@@ -99,8 +99,8 @@ percentages need not sum to 100.
 | reverse_delete_low_degree | 100.000 | 88.700 | 88.700 | 1.049 | 2.500 |
 | medium_degree_witness | 100.000 | 88.300 | 88.300 | 1.054 | 2.500 |
 | lifted_tscc_baker | 100.000 | 87.800 | 87.800 | 1.052 | 2.000 |
-| salvador_auxiliary | 100.000 | 84.900 | 84.900 | 1.107 | 5.000 |
 | low_degree_witness | 100.000 | 84.800 | 84.800 | 1.080 | 3.000 |
+| salvador_auxiliary | 100.000 | 84.000 | 84.000 | 1.110 | 5.000 |
 | order_ownership_late | 79.200 | 65.800 | 65.800 | 1.060 | 2.000 |
 | order_ownership_early | 79.200 | 64.500 | 64.500 | 1.065 | 2.000 |
 | reverse_delete_reverse | 100.000 | 61.200 | 61.200 | 1.176 | 3.500 |
@@ -121,7 +121,7 @@ percentages need not sum to 100.
 
 All four CAR studies are reproduced against the public Furones release:
 
-    pip install furones        # v0.3.8 or later
+    pip install furones        # v0.3.9 or later
     python run_integrity_measurements.py
     python run_high_degree_experiment.py
     python run_adversarial_experiment.py
@@ -133,7 +133,7 @@ responsible for any manuscript claims.
 
 ## Files
 
-- `CAR.furones-v0.3.8.json`
+- `CAR.furones-v0.3.9.json`
 - `CAR-001-ratio-constant.json`
 - `CAR-002-strategy-ablation.json`
 - `CAR-003-high-degree.json`

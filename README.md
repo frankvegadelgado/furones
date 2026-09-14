@@ -28,9 +28,9 @@ A **dominating set** in a graph $G = (V, E)$ is a subset $D \subseteq V$ such th
 
 # The Furones Algorithm
 
-Furones v0.3.8 is a **linear-time candidate-comparison solver** for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one.
+Furones v0.3.9 is a **linear-time candidate-comparison solver** for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one.
 
-> **New in v0.3.8**: a **max-cut double-cover candidate** ($C_X$) — it computes an exact min-side maximum cut of the bipartite double cover of the working graph and decodes it into a validated dominating-set candidate (see below). The pseudocode, gadget, correctness, and runtime are documented in the manuscript.
+> **New in v0.3.9**: a **max-cut double-cover candidate** ($C_X$) — it computes an exact min-side maximum cut of the bipartite double cover of the working graph and decodes it into a validated dominating-set candidate (see below). The pseudocode, gadget, correctness, and runtime are documented in the manuscript.
 
 The pipeline consists of:
 

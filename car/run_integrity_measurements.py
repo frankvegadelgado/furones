@@ -1,4 +1,4 @@
-"""Generate Furones v0.3.8 CAR-style exact benchmark measurements.
+"""Generate Furones v0.3.9 CAR-style exact benchmark measurements.
 
 This script imports Furones (the installed package, or a local source checkout
 via FURONES_ROOT if pip install was not run), builds a deterministic
@@ -660,14 +660,14 @@ def write_report(
         }
         for row in family_rows
     ]
-    report = f"""# Furones v0.3.8 Integrity Report
+    report = f"""# Furones v0.3.9 Integrity Report
 
 Generated: {metadata["generated_at_utc"]}
 
 This is a human-readable Integrity Report prepared for Gauge Freedom Journal's
 AI-assistance/CAR expectation. It documents the exact-optimum measurement run
 against the installed Furones package; reproduce it with `pip install furones`
-(v0.3.8) followed by this script.
+(v0.3.9) followed by this script.
 
 CAR-001 and CAR-002 below are produced by this script; CAR-003 and CAR-004 are
 companion studies produced by `run_high_degree_experiment.py` and
@@ -766,7 +766,7 @@ percentages need not sum to 100.
 
 All four CAR studies are reproduced against the public Furones release:
 
-    pip install furones        # v0.3.8 or later
+    pip install furones        # v0.3.9 or later
     python run_integrity_measurements.py
     python run_high_degree_experiment.py
     python run_adversarial_experiment.py
@@ -778,7 +778,7 @@ responsible for any manuscript claims.
 
 ## Files
 
-- `CAR.furones-v0.3.8.json`
+- `CAR.furones-v0.3.9.json`
 - `CAR-001-ratio-constant.json`
 - `CAR-002-strategy-ablation.json`
 - `CAR-003-high-degree.json`
@@ -827,18 +827,18 @@ def write_manifest(metadata: dict[str, Any]) -> None:
         )
     manifest = {
         "id": f"car:{sha256_file(OUT_DIR / 'CAR-001-ratio-constant.json')}",
-        "run_id": "furones-v0.3.8-car-2026-06-23-1000-exact",
+        "run_id": "furones-v0.3.9-car-2026-06-23-1000-exact",
         "created_at": metadata["generated_at_utc"],
         "run": {
             "kind": "measurement",
-            "name": "Furones v0.3.8 1000-instance exact small-graph CAR benchmark",
+            "name": "Furones v0.3.9 1000-instance exact small-graph CAR benchmark",
             "model": "scripted exact measurement against pip-installed furones",
             "version": f"furones-{metadata['furones_version_imported']}",
             "seed": metadata["benchmark_seed"],
             "steps": [
                 {
                     "id": "step-1",
-                    "run_id": "furones-v0.3.8-car-2026-06-23-1000-exact",
+                    "run_id": "furones-v0.3.9-car-2026-06-23-1000-exact",
                     "order_index": 1,
                     "checkpoint_type": "scripted-exact-measurement",
                     "model": "scripted exact measurement against pip-installed furones",
@@ -861,7 +861,7 @@ def write_manifest(metadata: dict[str, Any]) -> None:
         },
         "budgets": {"usd": None, "tokens": None, "nature_cost": None},
         "provenance": provenance,
-        "checkpoints": ["ckpt:furones-v0.3.8-car-2026-06-23-1000-exact:step-1"],
+        "checkpoints": ["ckpt:furones-v0.3.9-car-2026-06-23-1000-exact:step-1"],
         "sgrade": {
             "score": None,
             "components": {
@@ -875,7 +875,7 @@ def write_manifest(metadata: dict[str, Any]) -> None:
         "signer_public_key": None,
         "signatures": [],
     }
-    (OUT_DIR / "CAR.furones-v0.3.8.json").write_text(
+    (OUT_DIR / "CAR.furones-v0.3.9.json").write_text(
         json.dumps(manifest, indent=2) + "\n",
         encoding="utf-8",
     )
