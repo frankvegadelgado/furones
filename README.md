@@ -28,9 +28,9 @@ A **dominating set** in a graph $G = (V, E)$ is a subset $D \subseteq V$ such th
 
 # The Furones Algorithm
 
-Furones v0.4.0 is a **linear-time candidate-comparison solver** for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one.
+Furones v0.3.9 is a **linear-time candidate-comparison solver** for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one.
 
-> **New in v0.4.0**: an **improvement phase** (`furones.improve`) applied to the pruned candidates — *union re-prune*, *weighted swap search*, *consensus forcing* and *final refinement* (see steps 7–8 below). A `candidates` option returns the ensemble to the caller.
+> **New in v0.3.9**: an **improvement phase** (`furones.improve`) applied to the pruned candidates — *union re-prune*, *weighted swap search*, *consensus forcing* and *final refinement* (see steps 7–8 below). A `candidates` option returns the ensemble to the caller.
 
 The pipeline consists of:
 
@@ -71,7 +71,7 @@ Furones is conjectured to satisfy $|D| \le \max\\{4,\,\frac{1}{2}\ln n\\}\cdot\g
 
 ### Runtime
 
-$\mathcal{O}(n+m)$ for fixed parameters (large hidden constant). The Baker reduced-solve uses the default $\varepsilon = 1$ (shift $k = 1$), a constant factor; the improvement phase uses a work budget of $\max(2(n+m),\,50\,000)$ per swap search, so it is $\mathcal{O}(n+m)$ as well; the max-cut double-cover candidate $C_X$ is also $\mathcal{O}(n+m)$ (build the double cover with $2n$ nodes and $2m$ edges, then one BFS min-side cut).
+$\mathcal{O}(n+m)$ for fixed parameters (large hidden constant). The Baker reduced-solve uses the default $\varepsilon = 1$ (shift $k = 1$), a constant factor; the improvement phase uses a work budget of $\max(100(n+m),\,300\,000)$ per swap search (a search segment also stops after $100(n+m)$ units of work, at least $5\,000$, without a smaller dominating set), so it is $\mathcal{O}(n+m)$ as well; the max-cut double-cover candidate $C_X$ is also $\mathcal{O}(n+m)$ (build the double cover with $2n$ nodes and $2m$ edges, then one BFS min-side cut).
 
 ---
 

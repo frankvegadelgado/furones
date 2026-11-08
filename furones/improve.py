@@ -17,7 +17,6 @@ result is the smallest set found, never larger than the smallest candidate.
 
 from __future__ import annotations
 
-import heapq
 from collections import Counter
 from typing import Any, Iterable, List, Set, Tuple
 
@@ -26,8 +25,8 @@ import networkx as nx
 from .weighted_search import weighted_swap_search
 
 #: Work budget of each swap search, in units of (n + m), and the constant floor of the work.
-IMPROVE_BUDGET: float = 2.0
-IMPROVE_FLOOR: int = 50_000
+IMPROVE_BUDGET: float = 100.0
+IMPROVE_FLOOR: int = 300_000
 #: Seed of the swap searches.
 SEED: int = 20261031
 
@@ -43,53 +42,69 @@ def _dominates(adj: List[List[int]], members: Iterable[int]) -> bool:
 
 def _complete(adj: List[List[int]], seed: Iterable[int]) -> Set[int]:
     """The set ``seed`` completed into a dominating set: while some vertex is undominated, the vertex whose closed
-    neighbourhood holds most undominated vertices is added (bucketed gains, lazy updates)."""
+    neighbourhood holds most undominated vertices is added. Gains are maintained incrementally and kept in buckets
+    (lazy entries), so the whole completion costs ``O(n + m)``."""
     n = len(adj)
     chosen = set(seed)
     dominated = [False] * n
+    gain = [len(adj[v]) + 1 for v in range(n)]
+    remaining = n
+
+    def dominate(y: int) -> None:
+        nonlocal remaining
+        dominated[y] = True
+        remaining -= 1
+        gain[y] -= 1
+        for z in adj[y]:
+            gain[z] -= 1
+
     for v in chosen:
-        dominated[v] = True
-        for y in adj[v]:
-            dominated[y] = True
-    remaining = n - sum(dominated)
+        for y in (v, *adj[v]):
+            if not dominated[y]:
+                dominate(y)
     if remaining == 0:
         return chosen
-    heap = []
+    top = max(gain) if n else 0
+    buckets: List[List[int]] = [[] for _ in range(top + 1)]
     for v in range(n):
-        gain = (not dominated[v]) + sum(1 for y in adj[v] if not dominated[y])
-        if gain:
-            heap.append((-gain, v))
-    heapq.heapify(heap)
-    while remaining and heap:
-        negative, v = heapq.heappop(heap)
-        gain = (not dominated[v]) + sum(1 for y in adj[v] if not dominated[y])
-        if gain == 0:
+        if gain[v] > 0:
+            buckets[gain[v]].append(v)
+    level = top
+    while remaining and level > 0:
+        if not buckets[level]:
+            level -= 1
             continue
-        if gain < -negative:
-            heapq.heappush(heap, (-gain, v))
+        v = buckets[level].pop()
+        if gain[v] != level:
+            if gain[v] > 0:
+                buckets[gain[v]].append(v)
             continue
         chosen.add(v)
         for y in (v, *adj[v]):
             if not dominated[y]:
-                dominated[y] = True
-                remaining -= 1
+                dominate(y)
     return chosen
 
 
 def _prune(adj: List[List[int]], members: Iterable[int]) -> Set[int]:
-    """Removes redundant vertices (smallest degree first) while the set stays dominating. ``O(n + m)``."""
+    """Removes redundant vertices (smallest degree first, by counting sort) while the set stays dominating. ``O(n + m)``."""
     chosen = set(members)
     count = [0] * len(adj)
     for v in chosen:
         count[v] += 1
         for y in adj[v]:
             count[y] += 1
-    for v in sorted(chosen, key=lambda x: len(adj[x])):
-        if count[v] >= 2 and all(count[y] >= 2 for y in adj[v]):
-            chosen.discard(v)
-            count[v] -= 1
-            for y in adj[v]:
-                count[y] -= 1
+    top = max((len(adj[v]) for v in chosen), default=0)
+    buckets: List[List[int]] = [[] for _ in range(top + 1)]
+    for v in chosen:
+        buckets[len(adj[v])].append(v)
+    for bucket in buckets:
+        for v in bucket:
+            if count[v] >= 2 and all(count[y] >= 2 for y in adj[v]):
+                chosen.discard(v)
+                count[v] -= 1
+                for y in adj[v]:
+                    count[y] -= 1
     return chosen
 
 

@@ -26,7 +26,7 @@ includes perfect-code stress cases (complete graphs, dense circulants,
 hypercubes, Paley graphs) whose tightness tau = 1.
 
 Requirements:
-    pip install furones        # v0.4.0 or later
+    pip install furones        # v0.3.9 or later
     (networkx is a Furones dependency)
 
 Reproducibility:

@@ -12,25 +12,23 @@ tables, and the rerun scripts used to generate the artifacts.
 
 Every CAR experiment runs against the public release, so install it first:
 
-    pip install furones        # v0.4.0 or later
+    pip install furones        # v0.3.9 or later
     python run_integrity_measurements.py     # CAR-001 + CAR-002
     python run_high_degree_experiment.py     # CAR-003
     python run_adversarial_experiment.py     # CAR-004
 
 Each script imports `from furones.algorithm import find_dominating_set`, so the
-reported numbers reflect the installed solver. To start from a clean state, run
-`clean_generated_bundle.ps1` first to remove previously generated JSON/CSV/report
-files.
+reported numbers reflect the installed solver.
 
 ## Files
 
-- `CAR.furones-v0.4.0.json`: submission-facing CAR manifest in the style of the
+- `CAR.furones-v0.3.9.json`: submission-facing CAR manifest in the style of the
   journal template.
 - `CAR-001-ratio-constant.json`: 1000-instance exact-benchmark ratio-constant
   measurement.
 - `CAR-002-strategy-ablation.json`: per-strategy candidate-size and
   min-attainment measurement (includes the dynamic greedy maximum-coverage
-  candidate, the max-cut double-cover candidate and the four v0.4.0 improvement
+  candidate, the max-cut double-cover candidate and the four v0.3.9 improvement
   strategies: union re-prune, swap search, consensus forcing, final refinement).
 - `run_high_degree_experiment.py` / `CAR-003-high-degree.json`: high-degree /
   dense-regime experiment probing `Delta > sqrt(n)/e`, including perfect-code
@@ -46,11 +44,10 @@ files.
 - `run_integrity_measurements.py`: rerun script for CAR-001/002.
 - `run_strategy_winners.py`: per-instance strategy winners (base and improvement
   strategies) for any graph set.
-- `clean_generated_bundle.ps1`: removes generated artifacts for a fresh run.
 
 ## Scope
 
-These artifacts collect four exact-optimum CAR studies for Furones v0.4.0. In
+These artifacts collect four exact-optimum CAR studies for Furones v0.3.9. In
 every study the exact domination number is computed by exhaustive search before
 comparison, so each instance is checked against the true optimum.
 

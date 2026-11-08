@@ -1,11 +1,11 @@
-# Furones v0.4.0 Integrity Report
+# Furones v0.3.9 Integrity Report
 
-Generated: 2026-11-08T02:49:05.944227+00:00
+Generated: 2026-11-08T03:36:53.927261+00:00
 
 This is a human-readable Integrity Report prepared for Gauge Freedom Journal's
 AI-assistance/CAR expectation. It documents the exact-optimum measurement run
 against the installed Furones package; reproduce it with `pip install furones`
-(v0.4.0) followed by this script.
+(v0.3.9) followed by this script.
 
 CAR-001 and CAR-002 below are produced by this script; CAR-003 and CAR-004 are
 companion studies produced by `run_high_degree_experiment.py` and
@@ -68,7 +68,7 @@ Median final ratio to optimum: `1.000`.
 | bipartite_002 | random_bipartite | 8 | 5 | 4 | 4 | 1.000 | 4 | closed_degree, low_degree_witness, medium_degree_witness, seed_and_complete, salvador_auxiliary, reverse_delete_low_degree, lifted_tscc_baker, union_reprune, swap_search, consensus_forcing, final_refinement |
 | bipartite_003 | random_bipartite | 9 | 4 | 6 | 6 | 1.000 | 6 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_input, reverse_delete_reverse, reverse_delete_high_degree, reverse_delete_low_degree, lifted_tscc_baker, union_reprune, swap_search, consensus_forcing, final_refinement |
 | bipartite_004 | random_bipartite | 10 | 7 | 4 | 4 | 1.000 | 4 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, order_ownership_late, order_ownership_early, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_input, reverse_delete_low_degree, lifted_tscc_baker, union_reprune, swap_search, consensus_forcing, final_refinement |
-| bipartite_005 | random_bipartite | 7 | 9 | 2 | 2 | 1.000 | 2 | greedy_max_coverage, closed_degree, order_ownership_late, order_ownership_early, seed_and_complete, reverse_delete_low_degree, union_reprune, swap_search, consensus_forcing, final_refinement |
+| bipartite_005 | random_bipartite | 7 | 9 | 2 | 2 | 1.000 | 2 | greedy_max_coverage, closed_degree, order_ownership_late, order_ownership_early, seed_and_complete, salvador_auxiliary, reverse_delete_low_degree, union_reprune, swap_search, consensus_forcing, final_refinement |
 | bipartite_006 | random_bipartite | 8 | 3 | 5 | 5 | 1.000 | 5 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_input, reverse_delete_low_degree, lifted_tscc_baker, union_reprune, swap_search, consensus_forcing, final_refinement |
 | bipartite_007 | random_bipartite | 9 | 6 | 4 | 4 | 1.000 | 4 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_input, reverse_delete_low_degree, lifted_tscc_baker, union_reprune, swap_search, consensus_forcing, final_refinement |
 | bipartite_008 | random_bipartite | 10 | 6 | 6 | 6 | 1.000 | 6 | greedy_max_coverage, closed_degree, low_degree_witness, medium_degree_witness, order_ownership_late, order_ownership_early, seed_and_complete, salvador_auxiliary, max_cut_double_cover, reverse_delete_reverse, reverse_delete_low_degree, lifted_tscc_baker, union_reprune, swap_search, consensus_forcing, final_refinement |
@@ -97,13 +97,13 @@ percentages need not sum to 100.
 | final_refinement | 100.000 | 100.000 | 100.000 | 1.000 | 1.000 |
 | swap_search | 100.000 | 100.000 | 100.000 | 1.000 | 1.000 |
 | seed_and_complete | 100.000 | 99.800 | 99.800 | 1.000 | 1.250 |
-| union_reprune | 100.000 | 95.800 | 95.800 | 1.017 | 1.500 |
+| union_reprune | 100.000 | 94.900 | 94.900 | 1.019 | 1.500 |
 | greedy_max_coverage | 100.000 | 92.700 | 92.700 | 1.023 | 1.500 |
 | closed_degree | 100.000 | 89.000 | 89.000 | 1.048 | 2.500 |
 | reverse_delete_low_degree | 100.000 | 88.700 | 88.700 | 1.049 | 2.500 |
 | medium_degree_witness | 100.000 | 88.200 | 88.200 | 1.054 | 2.500 |
 | lifted_tscc_baker | 100.000 | 87.800 | 87.800 | 1.052 | 2.000 |
-| salvador_auxiliary | 100.000 | 84.800 | 84.800 | 1.108 | 5.000 |
+| salvador_auxiliary | 100.000 | 86.200 | 86.200 | 1.103 | 5.000 |
 | low_degree_witness | 100.000 | 84.700 | 84.700 | 1.080 | 3.000 |
 | order_ownership_late | 79.200 | 65.800 | 65.800 | 1.060 | 2.000 |
 | order_ownership_early | 79.200 | 64.500 | 64.500 | 1.065 | 2.000 |
@@ -125,7 +125,7 @@ percentages need not sum to 100.
 
 All four CAR studies are reproduced against the public Furones release:
 
-    pip install furones        # v0.4.0 or later
+    pip install furones        # v0.3.9 or later
     python run_integrity_measurements.py
     python run_high_degree_experiment.py
     python run_adversarial_experiment.py
@@ -137,7 +137,7 @@ responsible for any manuscript claims.
 
 ## Files
 
-- `CAR.furones-v0.4.0.json`
+- `CAR.furones-v0.3.9.json`
 - `CAR-001-ratio-constant.json`
 - `CAR-002-strategy-ablation.json`
 - `CAR-003-high-degree.json`

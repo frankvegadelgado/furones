@@ -44,6 +44,9 @@ SAMPLE: int = 50
 WEIGHT_LIMITS: tuple[float, ...] = (10.0, 100.0, 30.0, 300.0)
 #: Segments of one search (each with its own weight cap, restarted from the best set).
 SEGMENTS: int = 4
+#: A segment stops when no smaller dominating set was found during STALL * (n + m) units of work (at least STALL_FLOOR).
+STALL: int = 100
+STALL_FLOOR: int = 5_000
 
 
 class _IndexedSet:
@@ -188,13 +191,16 @@ def _search(adj: list[list[int]], in_s: list[bool], budget: float, seed: int,
         work += 2 * len(az) + 2
 
     best_size = sum(best)
+    last_gain = work
+    stall = max(STALL * (n + m), STALL_FLOOR)
     step = 0
     last_added = -1
-    while work <= limit and len(sset) > 0 and best_size > target:
+    while work <= limit and work - last_gain <= stall and len(sset) > 0 and best_size > target:
         if len(undom) == 0:
             if len(sset) < best_size:
                 best_size = len(sset)
                 best = list(S)
+                last_gain = work
                 work += n
             # Try one vertex fewer: remove the vertex whose removal costs least.
             x = max((v for v in sset.items if not isolated[v]), key=lambda v: score[v], default=-1)
