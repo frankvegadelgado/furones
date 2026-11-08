@@ -7,6 +7,7 @@ import networkx as nx
 from . import tscc_ds_reduction
 from . import baker_algo
 from .maxcut import maxcut_bipartite_min_side_linear
+from .improve import improve_dominating_set
 from collections import defaultdict
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
@@ -867,9 +868,179 @@ def max_cut_bipartite(G: nx.Graph):
     D = {u for u, _ in result["side_1"]}
     return D
 
-def find_dominating_set(graph, eps=1, consistency=False):
+
+# ---------------------------------------------------------------------------
+# Spanning-tree candidate C_T
+# ---------------------------------------------------------------------------
+
+# DP states for a rooted tree vertex v
+_T_IN = 0    # v is in the set
+_T_DOM = 1   # v is not in the set, dominated by at least one child
+_T_FREE = 2  # v is not in the set, not dominated by children (parent must be in)
+
+
+def tree_minimum_dominating_set(T: nx.Graph) -> Set[Any]:
     """
-    Compute a Furones v0.3.9 dominating set of an undirected graph.
+    Exact minimum dominating set of a tree (or forest) in O(n).
+
+    Rooted DP with three states per vertex v:
+      IN[v]   = 1 + sum_c min(IN[c], DOM[c], FREE[c])
+      DOM[v]  = sum_c min(IN[c], DOM[c])  with at least one child IN
+      FREE[v] = sum_c DOM[c]
+    and each root takes min(IN, DOM).  Iterative (no recursion limit).
+    """
+    inf = float("inf")
+    result: Set[Any] = set()
+    seen: Set[Any] = set()
+
+    for root in T.nodes():
+        if root in seen:
+            continue
+        parent: Dict[Any, Any] = {root: None}
+        order: List[Any] = [root]
+        seen.add(root)
+        i = 0
+        while i < len(order):
+            v = order[i]
+            i += 1
+            for u in T.neighbors(v):
+                if u not in seen:
+                    seen.add(u)
+                    parent[u] = v
+                    order.append(u)
+
+        children: Dict[Any, List[Any]] = {v: [] for v in order}
+        for v in order[1:]:
+            children[parent[v]].append(v)
+
+        dp: Dict[Any, Tuple[float, float, float]] = {}
+        forced: Dict[Any, Any] = {}
+        for v in reversed(order):
+            in_v, dom_v, free_v = 1.0, 0.0, 0.0
+            any_in = False
+            best_pen, best_c = inf, None
+            for c in children[v]:
+                ic, dc, fc = dp[c]
+                in_v += min(ic, dc, fc)
+                free_v += dc
+                if ic <= dc:
+                    dom_v += ic
+                    any_in = True
+                else:
+                    dom_v += dc
+                    if ic - dc < best_pen:
+                        best_pen, best_c = ic - dc, c
+            forced[v] = None
+            if not children[v]:
+                dom_v = inf
+            elif not any_in:
+                dom_v += best_pen
+                forced[v] = best_c
+            dp[v] = (in_v, dom_v, free_v)
+
+        state: Dict[Any, int] = {}
+        r_in, r_dom, _ = dp[root]
+        state[root] = _T_IN if r_in <= r_dom else _T_DOM
+        for v in order:
+            s = state[v]
+            if s == _T_IN:
+                result.add(v)
+                for c in children[v]:
+                    ic, dc, fc = dp[c]
+                    m = min(ic, dc, fc)
+                    state[c] = _T_IN if ic == m else (_T_DOM if dc == m else _T_FREE)
+            elif s == _T_FREE:
+                for c in children[v]:
+                    state[c] = _T_DOM
+            else:
+                for c in children[v]:
+                    ic, dc, _ = dp[c]
+                    state[c] = _T_IN if (c == forced[v] or ic <= dc) else _T_DOM
+
+    return result
+
+
+def maximum_degree_sum_spanning_forest(G: nx.Graph) -> nx.Graph:
+    """
+    Maximum spanning forest of G with edge weight deg(u) + deg(v).
+
+    Weights are integers in [2, 2*Delta], so Kruskal runs on bucket-sorted
+    edges with NetworkX's ``UnionFind``: O(n + m * alpha(n)) instead of the
+    O(m log m) comparison sort used by ``nx.maximum_spanning_tree``.  The
+    resulting forest keeps the edges of high-degree vertices, so a vertex that
+    dominates many vertices in G keeps as many of them as possible as tree
+    neighbours.
+    """
+    deg = dict(G.degree())
+    max_w = 2 * max(deg.values(), default=0)
+    buckets: List[List[Tuple[Any, Any]]] = [[] for _ in range(max_w + 1)]
+    for u, v in G.edges():
+        buckets[deg[u] + deg[v]].append((u, v))
+
+    T = nx.Graph()
+    T.add_nodes_from(G.nodes())
+    uf = nx.utils.UnionFind(G.nodes())
+    need = G.number_of_nodes() - 1
+    for w in range(max_w, -1, -1):
+        for u, v in buckets[w]:
+            if uf[u] != uf[v]:
+                uf.union(u, v)
+                T.add_edge(u, v)
+                need -= 1
+        if need <= 0:
+            break
+    return T
+
+
+def _prune_low_degree_first(G: nx.Graph, D: Set[Any]) -> Set[Any]:
+    """Inclusion-minimal pruning that tries to drop low-degree vertices first."""
+    D = set(D)
+    dom_count: Dict[Any, int] = defaultdict(int)
+    for v in D:
+        for u in _closed_neighborhood(G, v):
+            dom_count[u] += 1
+    max_deg = max((G.degree(v) for v in D), default=0)
+    buckets: List[List[Any]] = [[] for _ in range(max_deg + 1)]
+    for v in D:
+        buckets[G.degree(v)].append(v)
+    for bucket in buckets:
+        for v in bucket:
+            if all(dom_count[u] >= 2 for u in _closed_neighborhood(G, v)):
+                D.discard(v)
+                for u in _closed_neighborhood(G, v):
+                    dom_count[u] -= 1
+    return D
+
+
+def spanning_tree_dominating_set(G: nx.Graph) -> Set[Any]:
+    """
+    Candidate C_T: exact MDS of a maximum spanning tree, pruned in G.
+
+    For every connected component C of G:
+      1. build a maximum (degree-sum) spanning tree T of C;
+      2. solve MDS exactly on T with the linear tree DP;
+      3. prune the tree optimum to an inclusion-minimal dominating set of C,
+         dropping low-degree vertices first (non-tree edges usually make
+         several tree dominators redundant).
+
+    Every edge of T is an edge of G, so the tree optimum already dominates C:
+    unlike the independent-dominating-set version used in Siriaisa, there are
+    never undominated leftovers to peel and re-queue.  Hence
+    gamma(G) <= |C_T| <= gamma(T), with equality on forests.
+
+    Runtime: O(n + m * alpha(n)).
+    """
+    D: Set[Any] = set()
+    T = maximum_degree_sum_spanning_forest(G)
+    S_T = tree_minimum_dominating_set(T)
+    for comp in nx.connected_components(G):
+        C = G.subgraph(comp)
+        D.update(_prune_low_degree_first(C, S_T & comp))
+    return D
+
+def find_dominating_set(graph, eps=1, consistency=False, improve=True, candidates=None):
+    """
+    Compute a Furones v0.4.0 dominating set of an undirected graph.
 
     The algorithm combines structural reductions with Baker's PTAS for planar graphs
     and linear original-graph sweeps on the original working graph.
@@ -883,8 +1054,22 @@ def find_dominating_set(graph, eps=1, consistency=False):
     the seed-and-complete sweep tries constant many high-coverage
     starts followed by a best residual complement, and the Salvador-style
     planar bipartite auxiliary reduction contributes a Baker-style weighted
-    planar-bipartite Dominating Set candidate.  These are general heuristics, not special-case rules.  The final
-    answer is the smallest valid candidate after pruning.
+    planar-bipartite Dominating Set candidate, and the spanning-tree
+    candidate solves MDS exactly on a maximum degree-sum spanning tree and
+    prunes it in the original graph (exact on forests).  These are general heuristics, not special-case rules.  The final
+    answer is the smallest valid candidate after pruning.  With ``improve=True``
+    (the default) the improvement phase of ``furones.improve`` (union re-prune,
+    weighted swap search, consensus forcing, final refinement) then runs on the
+    candidates with a work budget linear in n + m; its result replaces the
+    portfolio minimum only when it is a smaller dominating set, so the
+    guarantee above is preserved.
+
+    Args:
+        improve (bool): run the improvement phase (default True).
+        candidates (list or None): if a list, it receives a copy of every
+            candidate set of the ensemble (sets of vertices of the input
+            graph, isolated vertices included) when the routine reaches the
+            final comparison.
 
     Guarantees:
         • For general graphs, the algorithm returns a valid dominating set.
@@ -966,6 +1151,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
     early_salvador = salvador_planar_bipartite_baker_candidate(working_graph, eps=eps)
     early_rd_reverse = reverse_delete_dominating_set(working_graph, "reverse_input")
     early_max_cut = max_cut_bipartite(working_graph)
+    early_spanning_tree = spanning_tree_dominating_set(working_graph)
     early_candidate = _choose_best_valid_candidate(
         working_graph,
         early_sweep,
@@ -978,6 +1164,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
         early_salvador,
         early_rd_reverse,
         early_max_cut,
+        early_spanning_tree,
     )
     if len(early_candidate) <= 2:
         early_candidate.update(isolates)
@@ -1057,8 +1244,7 @@ def find_dominating_set(graph, eps=1, consistency=False):
     # is the smallest valid candidate after the same pruning/validation step.
     lifted_candidate = prune_redundant_vertices_dominating(working_graph, D)
 
-    approximate_dominating_set = _choose_best_valid_candidate(
-        working_graph,
+    pool = [
         lifted_candidate,
         early_candidate,
         early_sweep,
@@ -1072,9 +1258,18 @@ def find_dominating_set(graph, eps=1, consistency=False):
         early_rd_input,
         early_rd_reverse,
         early_max_cut,
+        early_spanning_tree,
         early_rd_high,
         early_rd_low,
-    )
+    ]
+    approximate_dominating_set = _choose_best_valid_candidate(working_graph, *pool)
+    if improve:
+        improved = improve_dominating_set(working_graph, pool)
+        if improved and len(improved) < len(approximate_dominating_set) and nx.is_dominating_set(working_graph, improved):
+            approximate_dominating_set = set(improved)
+    if candidates is not None:
+        candidates.extend(set(c) | isolates for c in pool)
+
 
     # --- Reintegration of isolated vertices ---
     # All isolated vertices must be included to ensure domination

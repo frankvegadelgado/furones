@@ -2,7 +2,7 @@
 
 ![In Loving Memory of Asia Furones (The Grandmother I Never Knew)](docs/furones.jpg)
 
-This work builds upon [The Furones Algorithm](https://dev.to/frank_vega_987689489099bf/the-furones-algorithm-15lp).
+This work builds upon [The Furones Algorithm](https://www.preprints.org/manuscript/202504.0522).
 
 ---
 
@@ -28,9 +28,9 @@ A **dominating set** in a graph $G = (V, E)$ is a subset $D \subseteq V$ such th
 
 # The Furones Algorithm
 
-Furones v0.3.9 is a **linear-time candidate-comparison solver** for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one.
+Furones v0.4.0 is a **linear-time candidate-comparison solver** for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one.
 
-> **New in v0.3.9**: a **max-cut double-cover candidate** ($C_X$) — it computes an exact min-side maximum cut of the bipartite double cover of the working graph and decodes it into a validated dominating-set candidate (see below). The pseudocode, gadget, correctness, and runtime are documented in the manuscript.
+> **New in v0.4.0**: an **improvement phase** (`furones.improve`) applied to the pruned candidates — *union re-prune*, *weighted swap search*, *consensus forcing* and *final refinement* (see steps 7–8 below). A `candidates` option returns the ensemble to the caller.
 
 The pipeline consists of:
 
@@ -46,14 +46,23 @@ The pipeline consists of:
    - $C_S$ — seed-and-complete
    - $C_B$ — Salvador-style bipartite auxiliary
    - $C_X$ — **max-cut double-cover** (min-side maximum cut of the bipartite double cover $B(H)$, decoded by first coordinate; validated)
+   - $C_T$ — **spanning-tree candidate**: exact tree DP for MDS on a maximum degree-sum spanning tree (bucket Kruskal, $\mathcal{O}(n + m\,\alpha(n))$), then pruned in the original graph; exact on forests
    - $C_R$ — reverse-delete (multiple deterministic orders)
 6. **Pruning** (`PruneRedundantDominating`): each candidate is made inclusion-minimal.
-7. **Portfolio minimum**: the smallest valid (dominates the original graph) pruned candidate is returned.
+7. **Portfolio minimum**: the smallest valid (dominates the original graph) pruned candidate is the baseline answer.
+8. **Improvement phase** (`improve=True`, the default; `furones.improve`), run on the working graph with a work budget linear in $n + m$:
+   - **Union re-prune** — the vertices chosen by at least half of the candidates, completed greedily by maximum coverage into a dominating set and pruned.
+   - **Weighted swap search** (`furones.weighted_search`) — from the smallest set, a fixed-size set may leave vertices undominated; the weights of the undominated vertices grow at every step, a vertex is swapped out by best-of-sample score and one from an undominated vertex's closed neighbourhood is swapped in under configuration checking; every dominating set found is recorded and one vertex is removed to try the next smaller size.
+   - **Consensus forcing** — the vertices chosen by at least two thirds of the candidates are forced, the rest is completed greedily, pruned and improved by the swap search.
+   - **Final refinement** — the swap search again, with another seed, from the smallest set found.
+
+   The result replaces the portfolio minimum only when it is a smaller dominating set, so steps 1–7 and their guarantees are unchanged.
 
 ### Unconditional guarantees
 
 - **Feasibility** (Theorem): every normal return is a dominating set of the input graph.
 - **Approximation ratio** (Theorem): because the portfolio contains $C_G$, every returned set $D$ satisfies $|D| \le H(\Delta+1)\,\gamma(G) \le (1+\ln(\Delta+1))\,\gamma(G) = \mathcal{O}(\log \Delta)$.
+- **Improvement phase** (Theorem): it never returns a set larger than the portfolio minimum and every set it returns is validated, so the bounds above hold with it enabled.
 - **Constant factor on bounded-degree graphs** (Corollary): for any fixed $\Delta$, the ratio is at most $1 + \ln(\Delta+1)$.
 
 ### Near-threshold ratio hypothesis
@@ -62,7 +71,7 @@ Furones is conjectured to satisfy $|D| \le \max\\{4,\,\frac{1}{2}\ln n\\}\cdot\g
 
 ### Runtime
 
-$\mathcal{O}(n+m)$ for fixed parameters (large hidden constant). The Baker reduced-solve uses the default $\varepsilon = 1$ (shift $k = 1$), a constant factor; the max-cut double-cover candidate $C_X$ is also $\mathcal{O}(n+m)$ (build the double cover with $2n$ nodes and $2m$ edges, then one BFS min-side cut).
+$\mathcal{O}(n+m)$ for fixed parameters (large hidden constant). The Baker reduced-solve uses the default $\varepsilon = 1$ (shift $k = 1$), a constant factor; the improvement phase uses a work budget of $\max(2(n+m),\,50\,000)$ per swap search, so it is $\mathcal{O}(n+m)$ as well; the max-cut double-cover candidate $C_X$ is also $\mathcal{O}(n+m)$ (build the double cover with $2n$ nodes and $2m$ edges, then one BFS min-side cut).
 
 ---
 
@@ -89,7 +98,7 @@ The `car/` folder contains three reproducible exact-optimum studies. Every study
 
 ## CAR-002: Per-Strategy Ablation (`run_integrity_measurements.py`)
 
-Each exposed strategy is measured independently on the same 1 000-instance benchmark.
+Each exposed strategy is measured independently on the same 1 000-instance benchmark. The script also measures the four improvement strategies (`union_reprune`, `swap_search`, `consensus_forcing`, `final_refinement`), each computed from the pruned base candidates of the instance; `run_strategy_winners.py` reports the winners over any graph set.
 
 | Strategy | Valid | Optimal | Mean ratio | Max ratio |
 |---|---|---|---|---|
@@ -199,7 +208,20 @@ pip install furones
    cd furones
    ```
 
-2. Run the script:
+2. Use it from Python:
+
+   ```python
+   import networkx as nx
+   from furones.algorithm import find_dominating_set
+
+   G = nx.gnp_random_graph(200, 0.03, seed=1)
+   D = find_dominating_set(G)                    # with the improvement phase
+   D0 = find_dominating_set(G, improve=False)    # portfolio minimum only
+   pool = []
+   find_dominating_set(G, candidates=pool)       # pool receives the ensemble's candidate sets
+   ```
+
+3. Run the script:
 
    ```bash
    asia -i ./benchmarks/testMatrix1

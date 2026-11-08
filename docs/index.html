@@ -34,7 +34,7 @@
 <body>
 <h1>Furones: Approximate Dominating Set Solver</h1>
 <p><img src="furones.jpg" alt="In Loving Memory of Asia Furones (The Grandmother I Never Knew)"></p>
-<p>This work builds upon <a href="https://dev.to/frank_vega_987689489099bf/the-furones-algorithm-15lp">The Furones Algorithm</a>.</p>
+<p>This work builds upon <a href="https://www.preprints.org/manuscript/202504.0522">The Furones Algorithm</a>.</p>
 <hr>
 <h1>Overview of the Minimum Dominating Set (MDS)</h1>
 <h2>Definition</h2>
@@ -53,9 +53,9 @@
 </ul>
 <hr>
 <h1>The Furones Algorithm</h1>
-<p>Furones v0.3.9 is a <strong>linear-time candidate-comparison solver</strong> for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one.</p>
+<p>Furones v0.4.0 is a <strong>linear-time candidate-comparison solver</strong> for MDS. It builds a portfolio of dominating-set candidates on the input graph and returns the smallest validated one.</p>
 <blockquote>
-<p><strong>New in v0.3.9</strong>: a <strong>max-cut double-cover candidate</strong> ($C_X$) — it computes an exact min-side maximum cut of the bipartite double cover $B(H)$ of the working graph and decodes it (by first coordinate) into a validated dominating-set candidate. The pseudocode, gadget, correctness, and $\mathcal{O}(n+m)$ runtime are documented in the manuscript.</p>
+<p><strong>New in v0.4.0</strong>: an <strong>improvement phase</strong> (<code>furones.improve</code>) applied to the pruned candidates — <em>union re-prune</em>, <em>weighted swap search</em>, <em>consensus forcing</em> and <em>final refinement</em> (see steps 7–8 below). A <code>candidates</code> option returns the ensemble to the caller.</p>
 </blockquote>
 <p>The pipeline consists of:</p>
 <ol>
@@ -76,18 +76,28 @@
 </ul>
 </li>
 <li><strong>Pruning</strong> (<code>PruneRedundantDominating</code>): each candidate is made inclusion-minimal.</li>
-<li><strong>Portfolio minimum</strong>: the smallest valid (dominates the original graph) pruned candidate is returned.</li>
+<li><strong>Portfolio minimum</strong>: the smallest valid (dominates the original graph) pruned candidate is the baseline answer.</li>
+<li><strong>Improvement phase</strong> (<code>improve=True</code>, the default; <code>furones.improve</code>), run on the working graph with a work budget linear in $n + m$:
+<ul>
+<li><strong>Union re-prune</strong> — the vertices chosen by at least half of the candidates, completed greedily by maximum coverage into a dominating set and pruned.</li>
+<li><strong>Weighted swap search</strong> (<code>furones.weighted_search</code>) — from the smallest set, a fixed-size set may leave vertices undominated; the weights of the undominated vertices grow at every step, a vertex is swapped out by best-of-sample score and one from an undominated vertex's closed neighbourhood is swapped in under configuration checking; every dominating set found is recorded and one vertex is removed to try the next smaller size.</li>
+<li><strong>Consensus forcing</strong> — the vertices chosen by at least two thirds of the candidates are forced, the rest is completed greedily, pruned and improved by the swap search.</li>
+<li><strong>Final refinement</strong> — the swap search again, with another seed, from the smallest set found.</li>
+</ul>
+<p>The result replaces the portfolio minimum only when it is a smaller dominating set, so steps 1–7 and their guarantees are unchanged.</p>
+</li>
 </ol>
 <h3>Unconditional guarantees</h3>
 <ul>
 <li><strong>Feasibility</strong> (Theorem): every normal return is a dominating set of the input graph.</li>
 <li><strong>Approximation ratio</strong> (Theorem): because the portfolio contains $C_G$, every returned set $D$ satisfies $|D| \le H(\Delta+1),\gamma(G) \le (1+\ln(\Delta+1)),\gamma(G) = \mathcal{O}(\log \Delta)$.</li>
+<li><strong>Improvement phase</strong> (Theorem): it never returns a set larger than the portfolio minimum and every set it returns is validated, so the bounds above hold with it enabled.</li>
 <li><strong>Constant factor on bounded-degree graphs</strong> (Corollary): for any fixed $\Delta$, the ratio is at most $1 + \ln(\Delta+1)$.</li>
 </ul>
 <h3>Near-threshold ratio hypothesis</h3>
 <p>Furones is conjectured to satisfy $|D| \le \max\{4,,\frac{1}{2}\ln n\}\cdot\gamma(G)$ on every graph. Proving this for all graphs would imply <strong>P = NP</strong> (via Dinur–Steurer). The hypothesis is already proved unconditionally for all graphs of maximum degree $\Delta \le \sqrt{n}/e$.</p>
 <h3>Runtime</h3>
-<p>$\mathcal{O}(n+m)$ for fixed parameters (large hidden constant). The Baker reduced-solve uses the default $\varepsilon = 1$ (shift $k = 1$), a constant factor; the max-cut double-cover candidate $C_X$ is also $\mathcal{O}(n+m)$ (build the double cover with $2n$ nodes and $2m$ edges, then one BFS min-side cut).</p>
+<p>$\mathcal{O}(n+m)$ for fixed parameters (large hidden constant). The Baker reduced-solve uses the default $\varepsilon = 1$ (shift $k = 1$), a constant factor; the improvement phase uses a work budget of $\max(2(n+m),\,50\,000)$ per swap search, so it is $\mathcal{O}(n+m)$ as well; the max-cut double-cover candidate $C_X$ is also $\mathcal{O}(n+m)$ (build the double cover with $2n$ nodes and $2m$ edges, then one BFS min-side cut).</p>
 <hr>
 <h1>CAR Benchmarks</h1>
 <p>The <code>car/</code> folder contains three reproducible exact-optimum studies. Every study imports the <strong>installed</strong> Furones package and compares it against the exact domination number $\gamma(G)$ computed by exhaustive search.</p>
@@ -185,7 +195,7 @@
 </tbody>
 </table>
 <h2>CAR-002: Per-Strategy Ablation (<code>run_integrity_measurements.py</code>)</h2>
-<p>Each exposed strategy is measured independently on the same 1 000-instance benchmark.</p>
+<p>Each exposed strategy is measured independently on the same 1 000-instance benchmark. The script also measures the four improvement strategies (<code>union_reprune</code>, <code>swap_search</code>, <code>consensus_forcing</code>, <code>final_refinement</code>), each computed from the pruned base candidates of the instance; <code>run_strategy_winners.py</code> reports the winners over any graph set.</p>
 <table>
 <thead>
 <tr>
@@ -579,6 +589,18 @@ e 3 5
 <p>Clone the repository:</p>
 <pre><code class="language-bash">git clone https://github.com/frankvegadelgado/furones.git
 cd furones
+</code></pre>
+</li>
+<li>
+<p>Use it from Python:</p>
+<pre><code class="language-python">import networkx as nx
+from furones.algorithm import find_dominating_set
+
+G = nx.gnp_random_graph(200, 0.03, seed=1)
+D = find_dominating_set(G)                    # with the improvement phase
+D0 = find_dominating_set(G, improve=False)    # portfolio minimum only
+pool = []
+find_dominating_set(G, candidates=pool)       # pool receives the ensemble's candidate sets
 </code></pre>
 </li>
 <li>

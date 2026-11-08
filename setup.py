@@ -2,7 +2,7 @@ from pathlib import Path
 
 import setuptools
 
-VERSION = "0.3.9"
+VERSION = "0.4.0"
 
 NAME = "furones"
 
@@ -19,7 +19,7 @@ setuptools.setup(
     url="https://github.com/frankvegadelgado/furones",
     project_urls={
         "Source Code": "https://github.com/frankvegadelgado/furones",
-        "Documentation Research": "https://dev.to/frank_vega_987689489099bf/the-furones-algorithm-15lp",
+        "Documentation Research": "https://www.preprints.org/manuscript/202504.0522",
     },
     author="Frank Vega",
     author_email="vega.frank@gmail.com",

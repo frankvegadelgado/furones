@@ -3707,7 +3707,7 @@ index,seed,family,n,m,delta,Delta,gamma,furones_size,furones_valid,ratio,tau,rho
 3705,4705,perfect_code_perturbed,15,30,4,4,3,3,True,1.0,1.0,4.0,True,True
 3706,4706,circulant_efficient,16,48,6,6,3,3,True,1.0,1.3125,4.0,True,True
 3707,4707,cocktail_multipartite,4,4,2,2,2,2,True,1.0,1.5,4.0,True,True
-3708,4708,random_regular,16,40,5,5,3,4,True,1.3333,1.125,4.0,True,False
+3708,4708,random_regular,16,40,5,5,3,3,True,1.0,1.125,4.0,True,True
 3709,4709,random_dense,8,20,4,6,2,2,True,1.0,1.75,4.0,True,True
 3710,4710,greedy_trap,9,16,2,5,2,2,True,1.0,1.3333,4.0,True,True
 3711,4711,geometric_setcover,13,15,1,4,4,4,True,1.0,1.5385,4.0,True,True
@@ -5184,7 +5184,7 @@ index,seed,family,n,m,delta,Delta,gamma,furones_size,furones_valid,ratio,tau,rho
 5182,6182,perfect_code_perturbed,9,19,4,5,2,2,True,1.0,1.3333,4.0,True,True
 5183,6183,circulant_efficient,16,48,6,6,3,3,True,1.0,1.3125,4.0,True,True
 5184,6184,cocktail_multipartite,9,26,5,7,2,2,True,1.0,1.7778,4.0,True,True
-5185,6185,random_regular,16,24,3,3,4,5,True,1.25,1.0,4.0,True,False
+5185,6185,random_regular,16,24,3,3,4,4,True,1.0,1.0,4.0,True,True
 5186,6186,random_dense,12,31,1,8,3,3,True,1.0,2.25,4.0,True,True
 5187,6187,greedy_trap,10,13,1,4,2,2,True,1.0,1.0,4.0,True,True
 5188,6188,geometric_setcover,15,18,1,5,3,3,True,1.0,1.2,4.0,True,True
@@ -9013,7 +9013,7 @@ index,seed,family,n,m,delta,Delta,gamma,furones_size,furones_valid,ratio,tau,rho
 9011,10011,perfect_code_perturbed,16,34,4,5,4,4,True,1.0,1.5,4.0,True,True
 9012,10012,circulant_efficient,16,80,10,10,2,2,True,1.0,1.375,4.0,True,True
 9013,10013,cocktail_multipartite,6,12,4,4,2,2,True,1.0,1.6667,4.0,True,True
-9014,10014,random_regular,14,28,4,4,3,4,True,1.3333,1.0714,4.0,True,False
+9014,10014,random_regular,14,28,4,4,3,3,True,1.0,1.0714,4.0,True,True
 9015,10015,random_dense,10,29,3,7,2,2,True,1.0,1.6,4.0,True,True
 9016,10016,greedy_trap,12,13,1,4,3,3,True,1.0,1.25,4.0,True,True
 9017,10017,geometric_setcover,16,21,1,6,3,3,True,1.0,1.3125,4.0,True,True
@@ -9272,7 +9272,7 @@ index,seed,family,n,m,delta,Delta,gamma,furones_size,furones_valid,ratio,tau,rho
 9270,10270,perfect_code_perturbed,16,32,4,4,4,4,True,1.0,1.25,4.0,True,True
 9271,10271,circulant_efficient,14,28,4,4,3,3,True,1.0,1.0714,4.0,True,True
 9272,10272,cocktail_multipartite,6,12,4,4,2,2,True,1.0,1.6667,4.0,True,True
-9273,10273,random_regular,16,24,3,3,4,5,True,1.25,1.0,4.0,True,False
+9273,10273,random_regular,16,24,3,3,4,4,True,1.0,1.0,4.0,True,True
 9274,10274,random_dense,12,26,1,9,3,3,True,1.0,2.5,4.0,True,True
 9275,10275,greedy_trap,6,5,1,2,2,2,True,1.0,1.0,4.0,True,True
 9276,10276,geometric_setcover,13,15,1,4,4,4,True,1.0,1.5385,4.0,True,True
@@ -9447,7 +9447,7 @@ index,seed,family,n,m,delta,Delta,gamma,furones_size,furones_valid,ratio,tau,rho
 9445,10445,perfect_code_perturbed,8,14,3,4,2,2,True,1.0,1.25,4.0,True,True
 9446,10446,circulant_efficient,16,32,4,4,4,4,True,1.0,1.25,4.0,True,True
 9447,10447,cocktail_multipartite,5,6,2,3,2,2,True,1.0,1.6,4.0,True,True
-9448,10448,random_regular,14,28,4,4,3,4,True,1.3333,1.0714,4.0,True,False
+9448,10448,random_regular,14,28,4,4,3,3,True,1.0,1.0714,4.0,True,True
 9449,10449,random_dense,10,19,2,6,2,2,True,1.0,1.4,4.0,True,True
 9450,10450,greedy_trap,10,14,2,5,3,3,True,1.0,1.8,4.0,True,True
 9451,10451,geometric_setcover,13,15,1,4,4,4,True,1.0,1.5385,4.0,True,True

@@ -16,13 +16,15 @@ $generated = @(
     "CAR.furones-v0.3.5.json",
     "CAR.furones-v0.3.6.json",
     "CAR.furones-v0.3.7.json",
-    "CAR.furones-v0.3.9.json",
+    "CAR.furones-v0.4.0.json",
     "car_benchmark_cases.csv",
     "family_summary.csv",
     "strategy_ablation_by_instance.csv",
     "strategy_ablation_summary.csv",
     "high_degree_by_instance.csv",
     "adversarial_by_instance.csv",
+    "strategy_winners_by_instance.csv",
+    "strategy_winners_summary.csv",
     "INTEGRITY_REPORT.md"
 )
 

@@ -1,4 +1,4 @@
-"""Generate Furones v0.3.9 CAR-style exact benchmark measurements.
+"""Generate Furones v0.4.0 CAR-style exact benchmark measurements.
 
 This script imports Furones (the installed package, or a local source checkout
 via FURONES_ROOT if pip install was not run), builds a deterministic
@@ -65,6 +65,7 @@ _ensure_furones_importable()
 
 from furones import __version__ as FURONES_VERSION
 from furones import baker_algo, tscc_ds_reduction
+from furones.improve import improvement_steps
 from furones.algorithm import (
     find_dominating_set,
     greedy_closed_degree_dominating_set,
@@ -357,6 +358,16 @@ STRATEGIES: list[tuple[str, CandidateFn]] = [
     ("lifted_tscc_baker", lifted_tscc_baker_candidate),
 ]
 
+# Improvement strategies (furones.improve). They are not base strategies: each one is computed from the pruned base
+# candidates above (and from the sets found by the improvement strategies before it).
+IMPROVEMENT_STRATEGIES: list[str] = [
+    "union_reprune",
+    "swap_search",
+    "consensus_forcing",
+    "final_refinement",
+]
+ALL_STRATEGY_NAMES: list[str] = [name for name, _ in STRATEGIES] + IMPROVEMENT_STRATEGIES
+
 
 def has_universal_vertex(G: nx.Graph) -> bool:
     n = G.number_of_nodes()
@@ -416,33 +427,51 @@ def run_measurements() -> tuple[
         final_ratio = len(final_solution) / case.reference_size if final_valid else None
         final_optimal = bool(final_valid and len(final_solution) == case.reference_size)
 
-        for strategy_name, strategy_fn in STRATEGIES:
+        base_sets: list[set[Any]] = []
+
+        def measure(strategy_name: str, produce: Callable[[], set[Any]]) -> None:
             start = time.perf_counter()
             error = None
             try:
-                raw_candidate = set(strategy_fn(H))
+                raw_candidate = set(produce())
                 candidate, valid = finalize_candidate(G, H, isolates, raw_candidate)
             except Exception as exc:  # pragma: no cover - report path
                 candidate = set()
                 valid = False
                 error = f"{type(exc).__name__}: {exc}"
             seconds = time.perf_counter() - start
+            if valid and strategy_name not in IMPROVEMENT_STRATEGIES:
+                base_sets.append(candidate - isolates)
             ratio = len(candidate) / case.reference_size if valid else None
-            row = {
-                "case": case.name,
-                "family": case.family,
-                "strategy": strategy_name,
-                "n": G.number_of_nodes(),
-                "m": G.number_of_edges(),
-                "optimum_size": case.reference_size,
-                "reference_type": case.reference_type,
-                "candidate_size": len(candidate),
-                "valid": valid,
-                "ratio_to_optimum": ratio,
-                "seconds": seconds,
-                "error": error,
-            }
-            case_strategy_rows.append(row)
+            case_strategy_rows.append(
+                {
+                    "case": case.name,
+                    "family": case.family,
+                    "strategy": strategy_name,
+                    "n": G.number_of_nodes(),
+                    "m": G.number_of_edges(),
+                    "optimum_size": case.reference_size,
+                    "reference_type": case.reference_type,
+                    "candidate_size": len(candidate),
+                    "valid": valid,
+                    "ratio_to_optimum": ratio,
+                    "seconds": seconds,
+                    "error": error,
+                }
+            )
+
+        for strategy_name, strategy_fn in STRATEGIES:
+            measure(strategy_name, lambda fn=strategy_fn: fn(H))
+
+        # Improvement strategies, computed once from the pruned base candidates; the time of the whole phase is
+        # charged to the first step and each later step is timed on its own conversion only.
+        start = time.perf_counter()
+        steps = improvement_steps(H, base_sets) if H.number_of_nodes() else []
+        phase_seconds = time.perf_counter() - start
+        produced = dict(steps)
+        for strategy_name in IMPROVEMENT_STRATEGIES:
+            measure(strategy_name, lambda name=strategy_name: produced.get(name, set()))
+            case_strategy_rows[-1]["seconds"] += phase_seconds / len(IMPROVEMENT_STRATEGIES)
 
         valid_candidate_sizes = [
             row["candidate_size"] for row in case_strategy_rows if row["valid"]
@@ -484,7 +513,7 @@ def run_measurements() -> tuple[
 
     summary_rows: list[dict[str, Any]] = []
     total_cases = len(cases)
-    for strategy_name, _ in STRATEGIES:
+    for strategy_name in ALL_STRATEGY_NAMES:
         rows = [row for row in instance_rows if row["strategy"] == strategy_name]
         valid_rows = [row for row in rows if row["valid"]]
         ratios = [
@@ -561,7 +590,7 @@ def run_measurements() -> tuple[
         "benchmark_scope": "Deterministic 1000-instance benchmark of small graphs with exact optima found by exhaustive search; finite evidence only, not a universal approximation proof.",
         "instances": total_cases,
         "max_exact_nodes": MAX_EXACT_N,
-        "strategies": [name for name, _ in STRATEGIES],
+        "strategies": list(ALL_STRATEGY_NAMES),
         "observed_final_ratio_constant": max(final_ratios) if final_ratios else None,
         "observed_best_candidate_ratio_constant": max(min_candidate_ratios)
         if min_candidate_ratios
@@ -660,14 +689,14 @@ def write_report(
         }
         for row in family_rows
     ]
-    report = f"""# Furones v0.3.9 Integrity Report
+    report = f"""# Furones v0.4.0 Integrity Report
 
 Generated: {metadata["generated_at_utc"]}
 
 This is a human-readable Integrity Report prepared for Gauge Freedom Journal's
 AI-assistance/CAR expectation. It documents the exact-optimum measurement run
 against the installed Furones package; reproduce it with `pip install furones`
-(v0.3.9) followed by this script.
+(v0.4.0) followed by this script.
 
 CAR-001 and CAR-002 below are produced by this script; CAR-003 and CAR-004 are
 companion studies produced by `run_high_degree_experiment.py` and
@@ -766,7 +795,7 @@ percentages need not sum to 100.
 
 All four CAR studies are reproduced against the public Furones release:
 
-    pip install furones        # v0.3.9 or later
+    pip install furones        # v0.4.0 or later
     python run_integrity_measurements.py
     python run_high_degree_experiment.py
     python run_adversarial_experiment.py
@@ -778,7 +807,7 @@ responsible for any manuscript claims.
 
 ## Files
 
-- `CAR.furones-v0.3.9.json`
+- `CAR.furones-v0.4.0.json`
 - `CAR-001-ratio-constant.json`
 - `CAR-002-strategy-ablation.json`
 - `CAR-003-high-degree.json`
@@ -827,18 +856,18 @@ def write_manifest(metadata: dict[str, Any]) -> None:
         )
     manifest = {
         "id": f"car:{sha256_file(OUT_DIR / 'CAR-001-ratio-constant.json')}",
-        "run_id": "furones-v0.3.9-car-2026-06-23-1000-exact",
+        "run_id": "furones-v0.4.0-car-2026-11-07-1000-exact",
         "created_at": metadata["generated_at_utc"],
         "run": {
             "kind": "measurement",
-            "name": "Furones v0.3.9 1000-instance exact small-graph CAR benchmark",
+            "name": "Furones v0.4.0 1000-instance exact small-graph CAR benchmark",
             "model": "scripted exact measurement against pip-installed furones",
             "version": f"furones-{metadata['furones_version_imported']}",
             "seed": metadata["benchmark_seed"],
             "steps": [
                 {
                     "id": "step-1",
-                    "run_id": "furones-v0.3.9-car-2026-06-23-1000-exact",
+                    "run_id": "furones-v0.4.0-car-2026-11-07-1000-exact",
                     "order_index": 1,
                     "checkpoint_type": "scripted-exact-measurement",
                     "model": "scripted exact measurement against pip-installed furones",
@@ -861,7 +890,7 @@ def write_manifest(metadata: dict[str, Any]) -> None:
         },
         "budgets": {"usd": None, "tokens": None, "nature_cost": None},
         "provenance": provenance,
-        "checkpoints": ["ckpt:furones-v0.3.9-car-2026-06-23-1000-exact:step-1"],
+        "checkpoints": ["ckpt:furones-v0.4.0-car-2026-11-07-1000-exact:step-1"],
         "sgrade": {
             "score": None,
             "components": {
@@ -875,7 +904,7 @@ def write_manifest(metadata: dict[str, Any]) -> None:
         "signer_public_key": None,
         "signatures": [],
     }
-    (OUT_DIR / "CAR.furones-v0.3.9.json").write_text(
+    (OUT_DIR / "CAR.furones-v0.4.0.json").write_text(
         json.dumps(manifest, indent=2) + "\n",
         encoding="utf-8",
     )
